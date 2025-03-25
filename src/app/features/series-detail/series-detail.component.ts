@@ -90,7 +90,7 @@ export class SeriesDetailComponent {
 
     // Obtener los boletos a imprimir
     const tickets = await this.firestoreService.getTickets(series.id);
-    const ticketsToPrint = tickets.slice(startIndex, endIndex + 1);
+    const ticketsToPrint = tickets.filter((t) => !t.printed).slice(0, count);
 
     // Simulación de impresión (Aquí iría la lógica de impresión real)
     console.log('Imprimiendo boletos:', ticketsToPrint);
@@ -99,7 +99,8 @@ export class SeriesDetailComponent {
     await this.firestoreService.registerPrintBatch(
       series.id,
       startIndex,
-      endIndex
+      endIndex,
+      ticketsToPrint.flatMap((ticket) => (ticket.id ? [ticket.id] : []))
     );
 
     // Refrescar los datos
@@ -128,13 +129,46 @@ export class SeriesDetailComponent {
 
     this.isLoading.set(true);
 
+    // Obtener los boletos de la tanda exactos por ID
+    const tickets = await this.firestoreService.getTickets(series.id);
+    const ticketsToPrint = tickets.filter((ticket) =>
+      batch.ticketIds.includes(ticket.id ?? '')
+    );
+
+    if (ticketsToPrint.length === 0) {
+      alert('No se encontraron boletos para reimprimir.');
+      this.isLoading.set(false);
+      return;
+    }
+
+    // Simulación de impresión
+    console.log('Reimprimiendo boletos:', ticketsToPrint);
+
+    this.isLoading.set(false);
+  }
+
+  /*
+  async reprintTickets(batch: PrintBatch) {
+    const series = this.series();
+    if (!series) return;
+
+    const confirm = window.confirm(
+      `¿Deseas reimprimir los boletos de la tanda ${batch.startIndex} - ${batch.endIndex}?`
+    );
+    if (!confirm) return;
+
+    this.isLoading.set(true);
+
     // Obtener los boletos de la tanda seleccionada
     const tickets = await this.firestoreService.getTickets(series.id);
-    const ticketsToPrint = tickets.slice(batch.startIndex, batch.endIndex + 1);
+    const ticketsToPrint = tickets.filter(
+      (_, index) => index >= batch.startIndex && index <= batch.endIndex
+    );
 
     // Simulación de impresión (Aquí iría la lógica de impresión real)
     console.log('Reimprimiendo boletos:', ticketsToPrint);
 
     this.isLoading.set(false);
   }
+    */
 }

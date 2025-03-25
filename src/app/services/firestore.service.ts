@@ -143,6 +143,44 @@ export class FirestoreService {
   /**
    * Registra una nueva tanda de boletos impresos en Firestore.
    */
+
+  async registerPrintBatch(
+    seriesId: string,
+    startIndex: number,
+    endIndex: number,
+    ticketIds: string[]
+  ): Promise<void> {
+    if (!seriesId)
+      throw new Error('Error: No se proporcionó el ID de la serie.');
+
+    const printBatchesRef = collection(
+      this.firestore,
+      `series/${seriesId}/print_batches`
+    );
+
+    await addDoc(printBatchesRef, {
+      startIndex,
+      endIndex,
+      ticketIds, // Guardamos los IDs exactos de los boletos
+      printedAt: new Date().toISOString(),
+    });
+
+    // Actualizar los contadores de la serie
+    const seriesRef = doc(this.firestore, `series/${seriesId}`);
+    const seriesSnap = await getDoc(seriesRef);
+    if (!seriesSnap.exists()) return;
+
+    const seriesData = seriesSnap.data();
+    const newPrintedCount =
+      (seriesData['printedTickets'] ?? 0) + ticketIds.length;
+
+    await updateDoc(seriesRef, {
+      printedTickets: newPrintedCount,
+      availableTickets: (seriesData['totalTickets'] ?? 0) - newPrintedCount,
+    });
+  }
+
+  /*
   async registerPrintBatch(
     seriesId: string,
     startIndex: number,
@@ -176,7 +214,7 @@ export class FirestoreService {
       availableTickets: (seriesData['totalTickets'] ?? 0) - newPrintedCount,
     });
   }
-
+*/
   /**
    * Obtiene el último índice de boleto impreso.
    */
@@ -237,6 +275,7 @@ export class FirestoreService {
       startIndex: doc.data()['startIndex'],
       endIndex: doc.data()['endIndex'],
       printedAt: doc.data()['printedAt'],
+      ticketIds: doc.data()['ticketIds'] ?? [],
     }));
   }
 }

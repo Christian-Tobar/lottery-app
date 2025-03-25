@@ -9,6 +9,7 @@ export interface PrintBatch {
   startIndex: number;
   endIndex: number;
   printedAt: string;
+  ticketIds: string[];
 }
 
 export interface LotterySeries {
