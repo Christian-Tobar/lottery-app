@@ -1,0 +1,15 @@
+.page-container {
+  background-color: #f8f8f8f1;
+  border-radius: 10px;
+  width: 100%;
+  height: calc(100vh - 98px);
+  max-width: 100%;
+  margin-top: 10px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    height: auto;
+  }
+}

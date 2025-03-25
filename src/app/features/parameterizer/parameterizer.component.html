@@ -1,0 +1,136 @@
+<div class="page-container">
+  <div class="grid">
+    <div class="col-12 md:col-5 p-5">
+      <div class="grid">
+        <div class="col-12 p-2">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Título</mat-label>
+            <input
+              matInput
+              placeholder="Ej: Loteria Millonaria"
+              [(ngModel)]="ticketTitle"
+              (ngModelChange)="drawTicket()"
+            />
+            <mat-icon matSuffix>title</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="col-12 md:col-6 p-2">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Valor Boleta</mat-label>
+            <input
+              matInput
+              type="number"
+              placeholder="0"
+              [(ngModel)]="ticketPrice"
+              (ngModelChange)="drawTicket()"
+            />
+            <mat-icon matSuffix>attach_money</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="col-12 md:col-6 p-2">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Fecha</mat-label>
+            <input
+              matInput
+              [matDatepicker]="picker"
+              placeholder="DD/MM/AAAA"
+              [(ngModel)]="ticketDate"
+              (ngModelChange)="drawTicket()"
+            />
+            <mat-datepicker-toggle
+              matIconSuffix
+              [for]="picker"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <div class="col-12 p-2">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Número Contacto</mat-label>
+            <input
+              matInput
+              placeholder="Ej: 3120000000"
+              [(ngModel)]="ticketContact"
+              (ngModelChange)="drawTicket()"
+            />
+            <mat-icon matSuffix>phone_enabled</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="col-12 p-2">
+          <mat-form-field appearance="outline" class="w-full">
+            <textarea
+              matInput
+              [(ngModel)]="ticketDescription"
+              (ngModelChange)="drawTicket()"
+            ></textarea>
+            <mat-label>Descripción Adicional</mat-label>
+            <mat-icon matSuffix>description</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="col-12 md:col-6 p-2">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Oportunidades</mat-label>
+            <mat-select
+              [(ngModel)]="selectedOpportunity"
+              (ngModelChange)="drawTicket()"
+            >
+              @for (number of opportunities; track number) {
+              <mat-option [value]="number">{{ number }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="col-12 md:col-6 p-2">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Cifras</mat-label>
+            <mat-select
+              [(ngModel)]="selectedFigure"
+              (ngModelChange)="drawTicket()"
+            >
+              @for (number of figures; track number) {
+              <mat-option [value]="number">{{ number }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="col-12 md:col-7 p-5 flex align-items-center justify-content-center"
+    >
+      <div class="canvas-container flex flex-column align-items-center h-full">
+        <canvas #ticketCanvas></canvas>
+
+        <!-- Contenedor de botones -->
+        <div class="flex gap-3 mt-auto flex-wrap justify-content-center">
+          <button mat-fab extended>
+            <mat-icon class="material-symbols-outlined">panorama</mat-icon>
+            Fondo
+          </button>
+          <button mat-fab extended>
+            <mat-icon class="material-symbols-outlined">palette</mat-icon>
+            Color de fuente
+          </button>
+          <button mat-fab extended (click)="generateSeries()">
+            <mat-icon class="material-symbols-outlined">widget_small</mat-icon>
+            Generar Serie
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #loadingDialog>
+  <div class="loading-dialog">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p>Generando serie, por favor espera...</p>
+  </div>
+</ng-template>

@@ -1,0 +1,28 @@
+.mat-toolbar {
+  background-color: #005cbb;
+  color: white;
+}
+
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.mat-sidenv {
+  width: 200px;
+  border-right: none;
+  border-radius: 0;
+  padding: 16px 0;
+}
+
+.content {
+  min-height: calc(100svh - 98px);
+  padding: 16px;
+  max-width: 1520px;
+  margin: 0 auto;
+  font-size: 16px;
+  background-color: white;
+}
+
+.mat-sidenv-container {
+  min-height: calc(100svh - 65px);
+}

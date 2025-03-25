@@ -1,0 +1,50 @@
+<div class="page-container">
+  <h2>Lista de Series</h2>
+  <div class="">
+    @if (loading) {
+    <div class="loading">Cargando series...</div>
+    } @if (errorMessage) {
+    <div class="error">{{ errorMessage }}</div>
+    } @if (seriesList.length > 0) {
+
+    <table>
+      <thead>
+        <tr>
+          <th>Título</th>
+          <th>Precio</th>
+          <th>Fecha</th>
+          <th>Oportunidades</th>
+          <th>Cifras</th>
+          <th>Boletos</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (series of seriesList; track series.id) {
+        <tr>
+          <td>{{ series.title }}</td>
+          <td>
+            {{
+              series.price.toLocaleString("es-MX", {
+                style: "currency",
+                currency: "MXN"
+              })
+            }}
+          </td>
+          <td>{{ series.date }}</td>
+          <td>{{ series.opportunities }}</td>
+          <td>{{ series.figures }}</td>
+          <td>{{ series.totalTickets }}</td>
+          <td>
+            <button (click)="viewSeriesDetails(series.id)">Ver Detalles</button>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+
+    } @if (seriesList.length === 0 && !loading) {
+    <p>No hay series disponibles.</p>
+    }
+  </div>
+</div>

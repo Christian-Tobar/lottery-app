@@ -1,0 +1,33 @@
+<div class="page-container">
+  @if (isLoading()) {
+  <div class="loading">Cargando datos...</div>
+  } @else { @if (series()) {
+  <div>
+    <h2>{{ series().title }}</h2>
+    <p><strong>Precio:</strong> {{ series().price | currency }}</p>
+    <p><strong>Fecha:</strong> {{ series().date }}</p>
+    <p><strong>Boletos Totales:</strong> {{ series().totalTickets }}</p>
+    <p><strong>Boletos Impresos:</strong> {{ series().printedTickets }}</p>
+    <p><strong>Boletos Disponibles:</strong> {{ series().availableTickets }}</p>
+  </div>
+
+  <button mat-fab extended (click)="printNewTickets()">
+    <mat-icon class="material-symbols-outlined">print</mat-icon>
+    Imprimir Boletos
+  </button>
+
+  <h3>Tandas de boletos impresos</h3>
+  <ul>
+    <li *ngFor="let batch of printBatches">
+      <span
+        >* {{ batch.startIndex }} - {{ batch.endIndex }} ({{
+          batch.printedAt
+        }})</span
+      >
+      <button (click)="reprintTickets(batch)">Reimprimir</button>
+    </li>
+  </ul>
+  } @else {
+  <p>La serie no fue encontrada.</p>
+  } }
+</div>

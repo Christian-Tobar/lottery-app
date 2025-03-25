@@ -1,13 +1,16 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, ViewChild } from '@angular/core';
+import { RouterModule, RouterOutlet } from '@angular/router';
+import { MATERIAL_COMPONENTS } from './core/material.components';
+import { MatSidenav } from '@angular/material/sidenav';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [MATERIAL_COMPONENTS, RouterModule, RouterOutlet],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  styleUrl: './app.component.scss',
 })
 export class AppComponent {
-  title = 'loteria-app';
+  @ViewChild(MatSidenav, { static: true })
+  sidenav!: MatSidenav;
 }
