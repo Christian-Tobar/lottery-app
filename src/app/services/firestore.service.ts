@@ -180,41 +180,6 @@ export class FirestoreService {
     });
   }
 
-  /*
-  async registerPrintBatch(
-    seriesId: string,
-    startIndex: number,
-    endIndex: number
-  ): Promise<void> {
-    if (!seriesId)
-      throw new Error('Error: No se proporcionó el ID de la serie.');
-
-    const printBatchesRef = collection(
-      this.firestore,
-      `series/${seriesId}/print_batches`
-    );
-
-    await addDoc(printBatchesRef, {
-      startIndex,
-      endIndex,
-      printedAt: new Date().toISOString(),
-    });
-
-    // Actualizamos la cantidad de boletos impresos en la serie
-    const seriesRef = doc(this.firestore, `series/${seriesId}`);
-    const seriesSnap = await getDoc(seriesRef);
-    if (!seriesSnap.exists()) return;
-
-    const seriesData = seriesSnap.data();
-    const newPrintedCount =
-      (seriesData['printedTickets'] ?? 0) + (endIndex - startIndex + 1);
-
-    await updateDoc(seriesRef, {
-      printedTickets: newPrintedCount,
-      availableTickets: (seriesData['totalTickets'] ?? 0) - newPrintedCount,
-    });
-  }
-*/
   /**
    * Obtiene el último índice de boleto impreso.
    */

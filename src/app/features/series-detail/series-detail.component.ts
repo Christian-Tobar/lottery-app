@@ -5,13 +5,8 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { MATERIAL_COMPONENTS } from '../../core/material.components';
 import { MatDialog } from '@angular/material/dialog';
 import { FormControl } from '@angular/forms';
-import { PrintBatch } from '../../models/models';
-
-interface Ticket {
-  id?: string;
-  numbers: string[];
-  printed: boolean;
-}
+import { PrintBatch, Ticket } from '../../models/models';
+import { PdfticketService } from '../../services/pdfticket.service';
 
 @Component({
   selector: 'app-series-detail',
@@ -23,6 +18,7 @@ interface Ticket {
 export class SeriesDetailComponent {
   private route = inject(ActivatedRoute);
   private firestoreService = inject(FirestoreService);
+  private pdfticket = inject(PdfticketService);
 
   series = signal<any>(null);
   isLoading = signal(true);
@@ -60,7 +56,6 @@ export class SeriesDetailComponent {
     const series = this.series();
     if (!series) return;
 
-    // Pedir al usuario cuántos boletos imprimir
     const userInput = window.prompt(
       `¿Cuántos boletos deseas imprimir? (Disponibles: ${series.availableTickets})`,
       '1'
@@ -81,29 +76,37 @@ export class SeriesDetailComponent {
 
     this.isLoading.set(true);
 
-    // Obtener el último boleto impreso para saber desde dónde comenzar
+    // Obtener el último índice impreso
     const lastPrintedIndex = await this.firestoreService.getLastPrintedIndex(
       series.id
     );
     const startIndex = lastPrintedIndex + 1;
     const endIndex = startIndex + count - 1;
 
-    // Obtener los boletos a imprimir
+    // Obtener todos los boletos
     const tickets = await this.firestoreService.getTickets(series.id);
-    const ticketsToPrint = tickets.filter((t) => !t.printed).slice(0, count);
 
-    // Simulación de impresión (Aquí iría la lógica de impresión real)
+    // Seleccionar los boletos desde el último índice impreso
+    const ticketsToPrint = tickets.slice(startIndex - 1, endIndex);
+
+    if (ticketsToPrint.length === 0) {
+      alert('No hay suficientes boletos disponibles para imprimir.');
+      this.isLoading.set(false);
+      return;
+    }
+
     console.log('Imprimiendo boletos:', ticketsToPrint);
+    this.pdfticket.generateTicketsPdf(series, ticketsToPrint);
 
-    // Registrar la tanda de impresión en Firestore
+    // Registrar la tanda de impresión
     await this.firestoreService.registerPrintBatch(
       series.id,
       startIndex,
       endIndex,
-      ticketsToPrint.flatMap((ticket) => (ticket.id ? [ticket.id] : []))
+      ticketsToPrint.map((ticket) => ticket.id!)
     );
 
-    // Refrescar los datos
+    // Refrescar datos
     await this.loadSeries();
     this.isLoading.set(false);
   }
@@ -143,32 +146,8 @@ export class SeriesDetailComponent {
 
     // Simulación de impresión
     console.log('Reimprimiendo boletos:', ticketsToPrint);
+    this.pdfticket.generateTicketsPdf(series, ticketsToPrint);
 
     this.isLoading.set(false);
   }
-
-  /*
-  async reprintTickets(batch: PrintBatch) {
-    const series = this.series();
-    if (!series) return;
-
-    const confirm = window.confirm(
-      `¿Deseas reimprimir los boletos de la tanda ${batch.startIndex} - ${batch.endIndex}?`
-    );
-    if (!confirm) return;
-
-    this.isLoading.set(true);
-
-    // Obtener los boletos de la tanda seleccionada
-    const tickets = await this.firestoreService.getTickets(series.id);
-    const ticketsToPrint = tickets.filter(
-      (_, index) => index >= batch.startIndex && index <= batch.endIndex
-    );
-
-    // Simulación de impresión (Aquí iría la lógica de impresión real)
-    console.log('Reimprimiendo boletos:', ticketsToPrint);
-
-    this.isLoading.set(false);
-  }
-    */
 }
