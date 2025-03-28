@@ -4,6 +4,16 @@ export interface Ticket {
   printed: boolean;
 }
 
+export interface ValidatedTicket {
+  id: string;
+  numbers: string[];
+  printed: boolean;
+  seriesId: string;
+  title: string;
+  price: number;
+  date: string;
+}
+
 export interface PrintBatch {
   id?: string; // Se mantiene opcional para evitar conflictos
   startIndex: number;

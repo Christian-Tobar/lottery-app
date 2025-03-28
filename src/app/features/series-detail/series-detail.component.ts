@@ -32,7 +32,7 @@ export class SeriesDetailComponent {
   }
 
   /**
-   * 📌 Carga la serie y sus detalles basicos.
+   * Carga la serie y sus detalles basicos.
    */
   async loadSeries() {
     const seriesId = this.route.snapshot.paramMap.get('id');
