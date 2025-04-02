@@ -11,9 +11,9 @@ import { ZXingScannerModule } from '@zxing/ngx-scanner';
   styleUrl: './validator.component.scss',
 })
 export class ValidatorComponent {
-  isScanning = true; // 📸 Controla si la cámara está activa
+  isScanning = true; // Controla si la cámara está activa
   validationMessage = '';
-  ticketInfo: any = null; // 📄 Guarda la info del boleto
+  ticketInfo: any = null; // Guarda la info del boleto
 
   constructor(private qrValidator: QrValidatorService) {}
 
@@ -24,15 +24,15 @@ export class ValidatorComponent {
 
     if (ticketDetails) {
       this.validationMessage = '✅ Boleto válido';
-      this.ticketInfo = ticketDetails; // Ahora contiene los datos de la serie y el ticket
-      this.isScanning = false; // 🔴 Apaga la cámara
+      this.ticketInfo = ticketDetails;
+      this.isScanning = false; // Apaga la cámara
     } else {
       this.validationMessage = '❌ Boleto inválido';
     }
   }
 
   startScanning() {
-    this.isScanning = true; // 🔄 Reactivar la cámara
+    this.isScanning = true; // Reactivar la cámara
     this.validationMessage = '';
     this.ticketInfo = null;
   }

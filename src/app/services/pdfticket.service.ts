@@ -34,25 +34,25 @@ export class PdfticketService {
         ticketCounter = 0;
       }
 
-      // 🔹 Generamos el hash
+      // Generamos el hash
       const hash = this.hashService.generateTicketHash(ticket);
 
-      // 🔹 Creamos los datos del QR y los convertimos a Base64
+      // Creamos los datos del QR y los convertimos a Base64
       const rawData = JSON.stringify({
-        s: series.id, // 's' en vez de 'seriesId'
-        t: ticket.id, // 't' en vez de 'ticketId'
-        h: hash, // 'h' en vez de 'hash'
+        s: series.id,
+        t: ticket.id,
+        h: hash,
       });
       const qrData = Buffer.from(rawData).toString('base64');
 
-      // 🔹 Generamos el código QR como imagen
+      // Generamos el código QR como imagen
       const qrImage = await QRCode.toDataURL(qrData);
 
-      // 🔹 Dibujamos el borde del boleto
+      // Dibujamos el borde del boleto
       doc.setLineWidth(0.05);
       doc.rect(x, y, ticketWidth, ticketHeight);
 
-      // 🔹 Agregamos la información del boleto
+      // Agregamos la información del boleto
       doc.setFontSize(10);
       doc.text(series.title, x + 0.5, y + 1);
       doc.text(`Número(s): ${ticket.numbers.join(', ')}`, x + 0.5, y + 2);
@@ -60,7 +60,7 @@ export class PdfticketService {
       doc.text(`Fecha: ${series.date}`, x + 0.5, y + 4);
       doc.text(`Contacto: 123-456-789`, x + 0.5, y + 5);
 
-      // 🔹 Agregamos el QR al boleto
+      // Agregamos el QR al boleto
       doc.addImage(qrImage, 'PNG', x + 7, y + 1, 3, 3); // Ajustamos posición y tamaño
 
       ticketCounter++;

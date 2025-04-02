@@ -1,5 +1,5 @@
 <div class="validator-container">
-  <h2>🎫 Validador de Boletos</h2>
+  <h2>Validador de Boletos</h2>
 
   <div *ngIf="isScanning">
     <zxing-scanner (scanSuccess)="onQrScanned($event)"></zxing-scanner>
@@ -10,12 +10,12 @@
     <h3>{{ validationMessage }}</h3>
 
     <div *ngIf="ticketInfo">
-      <p><strong>🎟 Título de la serie:</strong> {{ ticketInfo.title }}</p>
-      <p><strong>💰 Precio:</strong> {{ ticketInfo.price }} USD</p>
-      <p><strong>📅 Fecha:</strong> {{ ticketInfo.date }}</p>
-      <p><strong>🎟 Número(s):</strong> {{ ticketInfo.numbers.join(", ") }}</p>
-      <p><strong>📌 Serie ID:</strong> {{ ticketInfo.seriesId }}</p>
-      <p><strong>🆔 ID del Ticket:</strong> {{ ticketInfo.id }}</p>
+      <p><strong>Título de la serie:</strong> {{ ticketInfo.title }}</p>
+      <p><strong>Precio:</strong> {{ ticketInfo.price }} USD</p>
+      <p><strong>Fecha:</strong> {{ ticketInfo.date }}</p>
+      <p><strong>Número(s):</strong> {{ ticketInfo.numbers.join(", ") }}</p>
+      <p><strong>Serie ID:</strong> {{ ticketInfo.seriesId }}</p>
+      <p><strong>ID del Ticket:</strong> {{ ticketInfo.id }}</p>
     </div>
 
     <button (click)="startScanning()">🔄 Escanear otro boleto</button>

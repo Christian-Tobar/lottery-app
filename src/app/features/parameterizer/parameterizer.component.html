@@ -15,6 +15,18 @@
           </mat-form-field>
         </div>
 
+        <div class="col-12 p-2">
+          <mat-form-field appearance="outline" class="w-full">
+            <textarea
+              matInput
+              [(ngModel)]="ticketDescription"
+              (ngModelChange)="drawTicket()"
+            ></textarea>
+            <mat-label>Descripción Adicional</mat-label>
+            <mat-icon matSuffix>description</mat-icon>
+          </mat-form-field>
+        </div>
+
         <div class="col-12 md:col-6 p-2">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Valor Boleta</mat-label>
@@ -31,7 +43,7 @@
 
         <div class="col-12 md:col-6 p-2">
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Fecha</mat-label>
+            <mat-label>Fecha Sorteo</mat-label>
             <input
               matInput
               [matDatepicker]="picker"
@@ -57,18 +69,6 @@
               (ngModelChange)="drawTicket()"
             />
             <mat-icon matSuffix>phone_enabled</mat-icon>
-          </mat-form-field>
-        </div>
-
-        <div class="col-12 p-2">
-          <mat-form-field appearance="outline" class="w-full">
-            <textarea
-              matInput
-              [(ngModel)]="ticketDescription"
-              (ngModelChange)="drawTicket()"
-            ></textarea>
-            <mat-label>Descripción Adicional</mat-label>
-            <mat-icon matSuffix>description</mat-icon>
           </mat-form-field>
         </div>
 
@@ -131,6 +131,9 @@
 <ng-template #loadingDialog>
   <div class="loading-dialog">
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-    <p>Generando serie, por favor espera...</p>
+    <p>
+      Generando serie, Este proceso puede tardar unos minutos, por favor
+      espere...
+    </p>
   </div>
 </ng-template>

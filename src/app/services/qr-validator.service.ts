@@ -16,42 +16,34 @@ export class QrValidatorService {
 
   async validateQr(qrData: string): Promise<ValidatedTicket | null> {
     try {
-      // 🔹 Decodificar QR desde Base64
+      // Decodificar QR desde Base64
       const decodedData = atob(qrData);
       const { s: seriesId, t: ticketId, h: hash } = JSON.parse(decodedData);
 
-      console.log('📌 QR escaneado:', { seriesId, ticketId, hash });
-
-      // 🔍 Obtener información de la serie
+      // Obtener información de la serie
       const series = await this.firestoreService.getSeriesById(seriesId);
       if (!series) {
-        console.error('❌ Serie no encontrada');
         return null;
       }
 
-      // 🔍 Buscar boletos en caché o Firestore
+      // Buscar boletos en caché o Firestore
       let tickets = this.seriesCache.get(seriesId);
       if (!tickets) {
-        console.log('🔍 Cargando boletos desde Firestore...');
         tickets = await this.firestoreService.getTickets(seriesId);
         this.seriesCache.set(seriesId, tickets);
       }
 
-      // 🔍 Buscar el ticket dentro de la serie
+      // Buscar el ticket dentro de la serie
       const ticket = tickets.find((t) => t.id === ticketId);
       if (!ticket) {
-        console.error('❌ Ticket no encontrado en la serie');
         return null;
       }
 
-      // 🔍 Validar hash
+      // Validar hash
       const generatedHash = await this.hashService.generateTicketHash(ticket);
       if (generatedHash !== hash) {
-        console.log('❌ Hash incorrecto, boleto inválido');
         return null;
       }
-
-      console.log('✅ Boleto válido');
 
       return {
         id: ticket.id!,
@@ -63,7 +55,6 @@ export class QrValidatorService {
         date: series.date,
       };
     } catch (error) {
-      console.error('❌ Error al procesar el QR:', error);
       return null;
     }
   }
