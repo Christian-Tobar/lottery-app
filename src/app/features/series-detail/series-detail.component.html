@@ -2,31 +2,51 @@
   @if (isLoading()) {
   <div class="loading">Cargando datos...</div>
   } @else { @if (series()) {
-  <div>
-    <h2>{{ series().title }}</h2>
-    <p><strong>Precio:</strong> {{ series().price | currency }}</p>
-    <p><strong>Fecha:</strong> {{ series().date }}</p>
-    <p><strong>Boletos Totales:</strong> {{ series().totalTickets }}</p>
-    <p><strong>Boletos Impresos:</strong> {{ series().printedTickets }}</p>
-    <p><strong>Boletos Disponibles:</strong> {{ series().availableTickets }}</p>
+
+  <div class="grid">
+    <div class="col-12 md:col-6 p-5">
+      <h3>Detalles de la serie</h3>
+      <p><strong>Identificacor:</strong> {{ series().id }}</p>
+      <p><strong>Total de Boletos:</strong> {{ series().totalTickets }}</p>
+      <p><strong>Boletos Impresos:</strong> {{ series().printedTickets }}</p>
+
+      <h3>Detalles del boleto</h3>
+      <div class="overflow-auto max-w-full no-scrollbar" style="height: 245px">
+        <p><strong>Titulo:</strong> {{ series().title }}</p>
+        <p><strong>Descripción:</strong> {{ series().description }}</p>
+        <p><strong>No. Oportunidades:</strong> {{ series().opportunities }}</p>
+        <p><strong>No. Cifras:</strong> {{ series().figures }}</p>
+        <p><strong>Fecha de sorteo:</strong> {{ series().date }}</p>
+        <p><strong>Contacto:</strong> {{ series().contact }}</p>
+      </div>
+    </div>
+    <div class="col-12 md:col-6 p-5">
+      <button mat-fab extended (click)="printNewTickets()">
+        <mat-icon class="material-symbols-outlined">print</mat-icon>
+        Imprimir Boletos
+      </button>
+
+      <h4 class="mt-3">Historial de impresión</h4>
+      <div class="overflow-auto max-w-full no-scrollbar" style="height: 350px">
+        <ul class="list-none p-0 m-0">
+          <li
+            *ngFor="let batch of printBatches"
+            class="mb-2 text-overflow-ellipsis overflow-hidden white-space-nowrap"
+          >
+            <span>
+              <mat-chip (click)="reprintTickets(batch)">
+                Tanda {{ batch.batchNumber }}: Boletos {{ batch.startIndex }} -
+                {{ batch.endIndex }} ({{
+                  batch.printedAt | date : "d 'de' MMMM 'de' y h:mm a"
+                }})
+              </mat-chip>
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
   </div>
 
-  <button mat-fab extended (click)="printNewTickets()">
-    <mat-icon class="material-symbols-outlined">print</mat-icon>
-    Imprimir Boletos
-  </button>
-
-  <h3>Tandas de boletos impresos</h3>
-  <ul>
-    <li *ngFor="let batch of printBatches">
-      <span
-        >* {{ batch.startIndex }} - {{ batch.endIndex }} ({{
-          batch.printedAt
-        }})</span
-      >
-      <button (click)="reprintTickets(batch)">Reimprimir</button>
-    </li>
-  </ul>
   } @else {
   <p>La serie no fue encontrada.</p>
   } }

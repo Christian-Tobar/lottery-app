@@ -1,22 +1,22 @@
 import { Component } from '@angular/core';
 import { FirestoreService } from '../../services/firestore.service';
 import { Router } from '@angular/router';
-import { CurrencyPipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { MATERIAL_COMPONENTS } from '../../core/material.components';
 
 interface Series {
   id: string;
+  createdAt: string;
   title: string;
-  price: number;
+  description: string;
   date: string;
-  opportunities: number;
-  figures: number;
-  totalTickets: number;
+  printedTickets: number;
 }
 
 @Component({
   selector: 'app-series-list',
   standalone: true,
-  imports: [],
+  imports: [CommonModule, MATERIAL_COMPONENTS],
   templateUrl: './series-list.component.html',
   styleUrl: './series-list.component.scss',
 })
@@ -38,16 +38,26 @@ export class SeriesListComponent {
     try {
       const seriesData = await this.firestoreService.getAllSeries();
 
-      // Aseguramos que id nunca sea undefined
-      this.seriesList = seriesData.map((series) => ({
-        id: series.id ?? '', // Si Firestore aún no asignó ID, se usa ""
-        title: series.title,
-        price: series.price,
-        date: series.date,
-        opportunities: series.opportunities,
-        figures: series.figures,
-        totalTickets: series.totalTickets ?? 0,
-      }));
+      console.log('Datos obtenidos de Firestore:', seriesData);
+
+      // Ordenar por fecha de creación de la más reciente a la más antigua
+      this.seriesList = seriesData
+        .filter((series) => series.createdAt) // Filtramos las series con fecha válida
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+        ) // Ordenamos por createdAt
+
+        .map((series) => ({
+          id: series.id ?? '',
+          createdAt: series.createdAt ?? '',
+          title: series.title,
+          description: series.description ?? '',
+          date: series.date,
+          printedTickets: series.printedTickets ?? 0,
+        }));
+
+      console.log('Lista ordenada:', this.seriesList);
     } catch (error) {
       this.errorMessage = 'Error al cargar las series';
       console.error(error);

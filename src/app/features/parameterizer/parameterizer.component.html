@@ -55,7 +55,7 @@
               matIconSuffix
               [for]="picker"
             ></mat-datepicker-toggle>
-            <mat-datepicker #picker></mat-datepicker>
+            <mat-datepicker #picker startView="month"></mat-datepicker>
           </mat-form-field>
         </div>
 
@@ -76,7 +76,7 @@
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Oportunidades</mat-label>
             <mat-select
-              [(ngModel)]="selectedOpportunity"
+              [(ngModel)]="selectedOpportunities"
               (ngModelChange)="drawTicket()"
             >
               @for (number of opportunities; track number) {
@@ -90,7 +90,7 @@
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Cifras</mat-label>
             <mat-select
-              [(ngModel)]="selectedFigure"
+              [(ngModel)]="selectedFigures"
               (ngModelChange)="drawTicket()"
             >
               @for (number of figures; track number) {

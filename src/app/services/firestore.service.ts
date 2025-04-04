@@ -9,28 +9,13 @@ import {
   writeBatch,
   updateDoc,
 } from '@angular/fire/firestore';
-import { PrintBatch } from '../models/models';
+import { LotterySeries, PrintBatch } from '../models/models';
 
 // Interfaces de datos
 interface Ticket {
   id?: string;
   numbers: string[];
   printed: boolean;
-}
-
-interface LotterySeries {
-  id?: string;
-  title: string;
-  description: string;
-  price: number;
-  date: string;
-  contact: string;
-  opportunities: number;
-  figures: number;
-  tickets: Ticket[];
-  totalTickets?: number;
-  printedTickets?: number;
-  availableTickets?: number;
 }
 
 // Funciones para codificar/decodificar datos en Base64
@@ -66,6 +51,7 @@ export class FirestoreService {
       totalTickets: series.tickets.length,
       printedTickets: 0,
       availableTickets: series.tickets.length,
+      createdAt: new Date().toISOString(),
     });
 
     const seriesId = seriesDoc.id;
@@ -119,6 +105,7 @@ export class FirestoreService {
       totalTickets: data['totalTickets'] ?? 0,
       printedTickets: data['printedTickets'] ?? 0,
       availableTickets: data['availableTickets'] ?? data['totalTickets'] ?? 0,
+      createdAt: data['createdAt'] || null, // Recuperamos la fecha de creación
     };
   }
 
@@ -144,6 +131,7 @@ export class FirestoreService {
         printedTickets: data['printedTickets'] ?? 0,
         availableTickets: data['availableTickets'] ?? data['totalTickets'] ?? 0,
         tickets: [],
+        createdAt: data['createdAt'] || '',
       };
     });
   }

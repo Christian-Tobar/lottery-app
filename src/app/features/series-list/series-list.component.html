@@ -1,50 +1,57 @@
 <div class="page-container">
-  <h2>Lista de Series</h2>
-  <div class="">
+  <div class="p-5">
+    <h3>Series Generadas</h3>
+
+    <!-- Loader -->
     @if (loading) {
-    <div class="loading">Cargando series...</div>
-    } @if (errorMessage) {
-    <div class="error">{{ errorMessage }}</div>
-    } @if (seriesList.length > 0) {
+    <div class="flex justify-content-center my-4">
+      <mat-spinner></mat-spinner>
+    </div>
+    }
 
-    <table>
-      <thead>
-        <tr>
-          <th>Título</th>
-          <th>Precio</th>
-          <th>Fecha</th>
-          <th>Oportunidades</th>
-          <th>Cifras</th>
-          <th>Boletos</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (series of seriesList; track series.id) {
-        <tr>
-          <td>{{ series.title }}</td>
-          <td>
-            {{
-              series.price.toLocaleString("es-MX", {
-                style: "currency",
-                currency: "MXN"
-              })
-            }}
-          </td>
-          <td>{{ series.date }}</td>
-          <td>{{ series.opportunities }}</td>
-          <td>{{ series.figures }}</td>
-          <td>{{ series.totalTickets }}</td>
-          <td>
-            <button (click)="viewSeriesDetails(series.id)">Ver Detalles</button>
-          </td>
-        </tr>
-        }
-      </tbody>
-    </table>
+    <!-- Mensaje de error -->
+    @if (errorMessage) {
+    <div class="error-message">
+      <mat-icon color="warn">error</mat-icon>
+      {{ errorMessage }}
+    </div>
+    }
 
+    <!-- Grid de tarjetas -->
+    @if (seriesList.length > 0) {
+    <div class="grid">
+      @for (series of seriesList; track series.id) {
+      <div class="col-12 md:col-5 lg:col-4 xl:col-3">
+        <mat-card class="series-card">
+          <mat-card-header>
+            <mat-card-title
+              >{{ series.description | slice : 0 : 70 }}...</mat-card-title
+            >
+            <mat-card-subtitle>{{ series.title }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content class="mt-2">
+            <p>
+              <strong>Sorteo {{ series.date }} </strong>
+            </p>
+            <p>
+              <strong>{{ series.printedTickets }} Boletos impresos</strong>
+            </p>
+          </mat-card-content>
+          <mat-card-actions>
+            <button
+              mat-button
+              color="primary"
+              (click)="viewSeriesDetails(series.id)"
+            >
+              <mat-icon>visibility</mat-icon> Ver Detalles
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+      }
+    </div>
     } @if (seriesList.length === 0 && !loading) {
-    <p>No hay series disponibles.</p>
+    <p class="text-center">No hay series disponibles.</p>
     }
   </div>
 </div>

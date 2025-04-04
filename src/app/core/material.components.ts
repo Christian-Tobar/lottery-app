@@ -13,6 +13,8 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 export const MATERIAL_COMPONENTS = [
   MatButtonModule,
@@ -30,4 +32,6 @@ export const MATERIAL_COMPONENTS = [
   MatSelectModule,
   MatDialogModule,
   MatProgressBarModule,
+  MatChipsModule,
+  MatProgressSpinnerModule,
 ];

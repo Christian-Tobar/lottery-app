@@ -8,7 +8,8 @@ import { TicketDrawingService } from './ticket-drawing.service';
   providedIn: 'root',
 })
 export class PdfticketService {
-  public backImage: string | null = null;
+  // Cache de imágenes de fondo por ID de serie
+  private backgroundCache = new Map<string, string>();
 
   constructor(private ticketDrawingService: TicketDrawingService) {}
 
@@ -35,14 +36,12 @@ export class PdfticketService {
         ticketDescription,
         ticketPrice,
         ticketDate,
-        ticketContact,
-        selectedOpportunity,
-        selectedFigure
+        ticketContact
       );
 
       setTimeout(() => {
         resolve(newCanvas.toDataURL('image/png'));
-      }, 500); // Pequeño delay para asegurar que se renderice correctamente
+      }, 500); // Delay para asegurar renderizado
     });
   }
 
@@ -53,8 +52,12 @@ export class PdfticketService {
       format: 'letter',
     });
 
-    if (!this.backImage) {
-      this.backImage = await this.generateBackgroundImage(
+    const seriesId = series.id;
+    // Obtener o generar imagen de fondo para esta serie
+    let backgroundImage = this.backgroundCache.get(seriesId);
+
+    if (!backgroundImage) {
+      backgroundImage = await this.generateBackgroundImage(
         series.title,
         series.description,
         series.price,
@@ -63,6 +66,8 @@ export class PdfticketService {
         series.opportunities,
         series.figures
       );
+
+      this.backgroundCache.set(seriesId, backgroundImage);
     }
 
     const ticketWidth = 10.795;
@@ -98,9 +103,8 @@ export class PdfticketService {
         ticketHeight - 2 * margin
       );
 
-      if (this.backImage) {
-        doc.addImage(this.backImage, 'PNG', x, y, ticketWidth, ticketHeight);
-      }
+      // Agregar imagen de fondo específica de esta serie
+      doc.addImage(backgroundImage, 'PNG', x, y, ticketWidth, ticketHeight);
 
       doc.addImage(
         qrImage,
@@ -111,9 +115,9 @@ export class PdfticketService {
         2
       );
 
-      doc.setFontSize(20);
+      doc.setFontSize(24);
       doc.setFont('helvetica', 'bold');
-      const numbersText = ticket.numbers.join('    ');
+      const numbersText = ticket.numbers.join('  ');
       const maxTextWidth = ticketWidth - 2;
       const textX = x + ticketWidth / 2;
       let textY = y + ticketHeight / 2 + 2;
@@ -122,11 +126,12 @@ export class PdfticketService {
         numbersText,
         maxTextWidth
       ) as string[];
-      splitText = splitText.map((line: string) => line.trim()); // Elimina espacios extra
+      splitText = splitText.map((line: string) => line.trim());
 
       if (splitText.length > 2) {
         splitText.splice(2);
       }
+
       textY -= (splitText.length - 1) * 0.7;
       doc.text(splitText, textX, textY, { align: 'center' });
 

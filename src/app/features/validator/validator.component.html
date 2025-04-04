@@ -1,23 +1,38 @@
-<div class="validator-container">
-  <h2>Validador de Boletos</h2>
+<div class="page-container">
+  <div class="p-5">
+    <h3>Validador de Boletos</h3>
 
-  <div *ngIf="isScanning">
-    <zxing-scanner (scanSuccess)="onQrScanned($event)"></zxing-scanner>
-    <p>📷 Escanea el código QR...</p>
-  </div>
-
-  <div *ngIf="!isScanning">
-    <h3>{{ validationMessage }}</h3>
-
-    <div *ngIf="ticketInfo">
-      <p><strong>Título de la serie:</strong> {{ ticketInfo.title }}</p>
-      <p><strong>Precio:</strong> {{ ticketInfo.price }} USD</p>
-      <p><strong>Fecha:</strong> {{ ticketInfo.date }}</p>
-      <p><strong>Número(s):</strong> {{ ticketInfo.numbers.join(", ") }}</p>
-      <p><strong>Serie ID:</strong> {{ ticketInfo.seriesId }}</p>
-      <p><strong>ID del Ticket:</strong> {{ ticketInfo.id }}</p>
+    <!-- Escáner QR centrado -->
+    <div *ngIf="isScanning" class="scanner-box">
+      <zxing-scanner (scanSuccess)="onQrScanned($event)"></zxing-scanner>
     </div>
 
-    <button (click)="startScanning()">🔄 Escanear otro boleto</button>
+    <!-- Información del boleto sin tarjeta -->
+    <div *ngIf="!isScanning" class="ticket-info">
+      <h3>Boleto Escaneado</h3>
+      <p><strong>Serie ID:</strong> {{ ticketInfo.seriesId }}</p>
+      <p><strong>Ticket ID:</strong> {{ ticketInfo.id }}</p>
+      <p><strong>Números:</strong> {{ ticketInfo.numbers.join(", ") }}</p>
+
+      <div *ngIf="ticketInfo?.printBatchInfo">
+        <p>
+          <strong>Tanda:</strong>
+          Boleto {{ ticketInfo.printBatchInfo.ticketNumberInBatch }} en la tanda
+          {{ ticketInfo?.printBatchInfo?.batchNumber }}
+        </p>
+        <p>
+          <strong>Fecha de impresión:</strong>
+          {{ ticketInfo.printBatchInfo.printedAt | date : "medium" }}
+        </p>
+      </div>
+
+      <button mat-raised-button color="primary" (click)="startScanning()">
+        🔄 Escanear otro boleto
+      </button>
+
+      <button mat-button color="accent" (click)="goToSeriesDetails()">
+        🔍 Ver detalles de la serie
+      </button>
+    </div>
   </div>
 </div>

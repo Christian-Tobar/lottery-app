@@ -1,0 +1,38 @@
+.page-container {
+  background-color: #f8f8f8f1;
+  border-radius: 10px;
+  width: 100%;
+  height: calc(100vh - 106px);
+  max-width: 100%;
+  margin-top: 10px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    height: auto;
+  }
+}
+
+.scanner-box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60vh; // Ajusta la altura según lo necesites
+  position: relative;
+}
+
+zxing-scanner {
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  position: relative;
+
+  video {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+    border-radius: 0; // asegura que no se herede ningún redondeo
+  }
+}

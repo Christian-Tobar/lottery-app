@@ -12,6 +12,12 @@ export interface ValidatedTicket {
   title: string;
   price: number;
   date: string;
+  printBatchInfo?: {
+    batchId: string;
+    printedAt: string;
+    ticketNumberInBatch: number;
+    totalInBatch: number;
+  };
 }
 
 export interface PrintBatch {
@@ -35,4 +41,5 @@ export interface LotterySeries {
   totalTickets?: number;
   printedTickets?: number;
   availableTickets?: number;
+  createdAt?: string;
 }

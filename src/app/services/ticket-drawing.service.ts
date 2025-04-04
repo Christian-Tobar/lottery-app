@@ -328,9 +328,7 @@ export class TicketDrawingService {
     ticketDescription: string,
     ticketPrice: number,
     ticketDate: string,
-    ticketContact: string,
-    selectedOpportunity: number,
-    selectedFigure: number
+    ticketContact: string
   ) {
     if (!ctx) return;
 
@@ -473,10 +471,9 @@ export class TicketDrawingService {
     ticketDescription: string,
     ticketPrice: number,
     ticketDate: string,
-    ticketContact: string,
-    selectedOpportunity: number,
-    selectedFigure: number
+    ticketContact: string
   ) {
+    console.log(`Numero de contacto que llega ${ticketContact}`);
     if (!canvas) return;
 
     const ctx = canvas.nativeElement.getContext('2d');
@@ -492,9 +489,7 @@ export class TicketDrawingService {
       ticketDescription,
       ticketPrice,
       ticketDate,
-      ticketContact,
-      selectedOpportunity,
-      selectedFigure
+      ticketContact
     );
 
     // Guardar la imagen de fondo

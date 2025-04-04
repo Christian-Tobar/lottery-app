@@ -8,6 +8,10 @@ import { FormControl } from '@angular/forms';
 import { PrintBatch, Ticket } from '../../models/models';
 import { PdfticketService } from '../../services/pdfticket.service';
 
+interface NumberedPrintBatch extends PrintBatch {
+  batchNumber: number;
+}
+
 @Component({
   selector: 'app-series-detail',
   standalone: true,
@@ -24,7 +28,7 @@ export class SeriesDetailComponent {
   isLoading = signal(true);
   availableTickets: Ticket[] = [];
   selectedTicketCount = new FormControl(1);
-  printBatches: PrintBatch[] = [];
+  printBatches: NumberedPrintBatch[] = [];
   dialog = inject(MatDialog);
 
   constructor() {
@@ -115,7 +119,18 @@ export class SeriesDetailComponent {
    * Carga las tandas de boletos impresos.
    */
   async loadPrintBatches(seriesId: string) {
-    this.printBatches = await this.firestoreService.getPrintBatches(seriesId);
+    // Cargar y ordenar las tandas por fecha (más reciente primero)
+    const rawBatches = await this.firestoreService.getPrintBatches(seriesId);
+    const sortedBatches = rawBatches.sort(
+      (a, b) =>
+        new Date(b.printedAt).getTime() - new Date(a.printedAt).getTime()
+    );
+
+    // Enumerar las tandas: Tanda 1 = más antigua
+    this.printBatches = sortedBatches.map((batch, index, arr) => ({
+      ...batch,
+      batchNumber: arr.length - index, // Tanda 1 es la más antigua
+    }));
   }
 
   /**

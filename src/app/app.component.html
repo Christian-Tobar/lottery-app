@@ -27,19 +27,28 @@
         (click)="sidenav.toggle()"
         routerLink="/"
         routerLinkActive="active"
-        ><mat-icon matListItemIcon>home</mat-icon> Nueva Serie
+        ><mat-icon matListItemIcon class="material-symbols-outlined"
+          >confirmation_number</mat-icon
+        >
+        Nueva Serie
       </mat-list-item>
       <mat-list-item
         (click)="sidenav.toggle()"
         routerLink="series"
         routerLinkActive="active"
-        ><mat-icon matListItemIcon>person</mat-icon> Series Guardadas
+        ><mat-icon matListItemIcon class="material-symbols-outlined"
+          >quick_reference_all</mat-icon
+        >
+        Series Generadas
       </mat-list-item>
       <mat-list-item
         (click)="sidenav.toggle()"
         routerLink="validar"
         routerLinkActive="active"
-        ><mat-icon matListItemIcon>qr_code_scanner</mat-icon> Validar QR
+        ><mat-icon matListItemIcon class="material-symbols-outlined"
+          >qr_code_scanner</mat-icon
+        >
+        Validar QR
       </mat-list-item>
     </mat-nav-list>
   </mat-sidenav>
