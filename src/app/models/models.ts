@@ -25,8 +25,10 @@ export interface PrintBatch {
 export interface LotterySeries {
   id?: string;
   title: string;
+  description: string;
   price: number;
   date: string;
+  contact: string;
   opportunities: number;
   figures: number;
   tickets: Ticket[];

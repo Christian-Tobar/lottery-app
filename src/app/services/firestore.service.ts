@@ -21,8 +21,10 @@ interface Ticket {
 interface LotterySeries {
   id?: string;
   title: string;
+  description: string;
   price: number;
   date: string;
+  contact: string;
   opportunities: number;
   figures: number;
   tickets: Ticket[];
@@ -55,8 +57,10 @@ export class FirestoreService {
     const seriesRef = collection(this.firestore, 'series');
     const seriesDoc = await addDoc(seriesRef, {
       title: series.title,
+      description: series.description,
       price: series.price,
       date: series.date,
+      contact: series.contact,
       opportunities: series.opportunities,
       figures: series.figures,
       totalTickets: series.tickets.length,
@@ -105,8 +109,10 @@ export class FirestoreService {
     return {
       id,
       title: data['title'] || '',
+      description: data['description'] || '',
       price: data['price'] || 0,
       date: data['date'] || '',
+      contact: data['contact'] || '',
       opportunities: data['opportunities'] || 0,
       figures: data['figures'] || 0,
       tickets: [],
@@ -128,8 +134,10 @@ export class FirestoreService {
       return {
         id: doc.id,
         title: data['title'] || '',
+        description: data['description'] || '',
         price: data['price'] || 0,
         date: data['date'] || '',
+        contact: data['contact'] || '',
         opportunities: data['opportunities'] || 0,
         figures: data['figures'] || 0,
         totalTickets: data['totalTickets'] ?? 0,

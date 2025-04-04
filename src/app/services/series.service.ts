@@ -1,20 +1,11 @@
 import { Injectable } from '@angular/core';
 import { FirestoreService } from './firestore.service';
+import { LotterySeries } from '../models/models';
 
 interface Ticket {
   id: string;
   numbers: string[];
   printed: boolean;
-}
-
-interface LotterySeries {
-  id?: string; // Firestore generará el ID
-  title: string;
-  price: number;
-  date: string;
-  opportunities: number;
-  figures: number;
-  tickets: Ticket[];
 }
 
 @Injectable({
@@ -30,8 +21,10 @@ export class SeriesService {
    */
   async generateAndSaveSeries(
     title: string,
+    description: string,
     price: number,
     date: string,
+    contact: string,
     opportunities: number,
     figures: number
   ): Promise<string> {
@@ -46,7 +39,16 @@ export class SeriesService {
 
     this.shuffleTickets(tickets, opportunities);
 
-    this.series = { title, price, date, opportunities, figures, tickets };
+    this.series = {
+      title,
+      description,
+      price,
+      date,
+      contact,
+      opportunities,
+      figures,
+      tickets,
+    };
 
     try {
       const seriesId = await this.firestoreService.saveSeries(this.series);
