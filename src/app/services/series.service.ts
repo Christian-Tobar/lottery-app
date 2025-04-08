@@ -20,13 +20,11 @@ export class SeriesService {
    * Genera y guarda una serie de lotería en Firestore.
    */
   async generateAndSaveSeries(
-    title: string,
-    description: string,
-    price: number,
     date: string,
     contact: string,
     opportunities: number,
-    figures: number
+    figures: number,
+    selectedColor: string
   ): Promise<string> {
     const totalNumbers = this.generateNumbers(figures);
     let tickets: Ticket[];
@@ -40,22 +38,18 @@ export class SeriesService {
     this.shuffleTickets(tickets, opportunities);
 
     this.series = {
-      title,
-      description,
-      price,
       date,
       contact,
       opportunities,
       figures,
       tickets,
+      selectedColor,
     };
 
     try {
       const seriesId = await this.firestoreService.saveSeries(this.series);
-      console.log('Serie guardada en Firestore con ID:', seriesId);
       return seriesId;
     } catch (error) {
-      console.error('Error al guardar la serie:', error);
       throw error;
     }
   }
@@ -78,7 +72,7 @@ export class SeriesService {
   }
 
   /**
-   * Mezcla aleatoriamente los elementos de un array usando el algoritmo Fisher-Yates.
+   * Mezcla aleatoriamente los elementos de un array (Fisher-Yates).
    */
   private shuffleArray(array: string[]) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -88,18 +82,17 @@ export class SeriesService {
   }
 
   /**
-   * Agrupa los números en boletos asegurando que cada número en un boleto tenga un primer dígito único.
-   * Se usa para oportunidades menores o iguales a 5.
+   * Agrupa números en boletos con primeros dígitos únicos (para ≤ 5 oportunidades).
    */
   private groupNumbersIntoTickets(
     numbers: string[],
     opportunities: number
   ): Ticket[] {
-    let tickets: Ticket[] = [];
-    let groupedNumbers: { [key: string]: string[] } = {};
+    const tickets: Ticket[] = [];
+    const groupedNumbers: { [key: string]: string[] } = {};
 
-    for (let num of numbers) {
-      let firstDigit = num[0];
+    for (const num of numbers) {
+      const firstDigit = num[0];
       if (!groupedNumbers[firstDigit]) groupedNumbers[firstDigit] = [];
       groupedNumbers[firstDigit].push(num);
     }
@@ -107,10 +100,10 @@ export class SeriesService {
     Object.values(groupedNumbers).forEach((group) => this.shuffleArray(group));
 
     while (Object.keys(groupedNumbers).length >= opportunities) {
-      let selectedNumbers: string[] = [];
-      let usedKeys = new Set<string>();
+      const selectedNumbers: string[] = [];
+      const usedKeys = new Set<string>();
 
-      for (let key of Object.keys(groupedNumbers)) {
+      for (const key of Object.keys(groupedNumbers)) {
         if (
           selectedNumbers.length < opportunities &&
           groupedNumbers[key].length > 0
@@ -140,23 +133,21 @@ export class SeriesService {
   }
 
   /**
-   * Genera boletos asegurando diversidad de primeros dígitos cuando hay muchas oportunidades.
-   * Se usa para oportunidades mayores a 5.
+   * Genera boletos optimizados (para > 5 oportunidades), buscando diversidad de primeros dígitos.
    */
   private generateOptimizedTickets(
     numbers: string[],
     opportunities: number
   ): Ticket[] {
-    let tickets: Ticket[] = [];
+    const tickets: Ticket[] = [];
     let availableNumbers = [...numbers];
     this.shuffleArray(availableNumbers);
 
     while (availableNumbers.length >= opportunities) {
-      let selectedNumbers = new Set<string>();
-      let ticketNumbers: string[] = [];
+      const selectedNumbers = new Set<string>();
+      const ticketNumbers: string[] = [];
 
-      for (let i = 0; i < availableNumbers.length; i++) {
-        let num = availableNumbers[i];
+      for (const num of availableNumbers) {
         if (!selectedNumbers.has(num[0])) {
           selectedNumbers.add(num[0]);
           ticketNumbers.push(num);
@@ -182,22 +173,22 @@ export class SeriesService {
   }
 
   /**
-   * Intercambia números aleatoriamente entre boletos sin romper la restricción de primeros dígitos únicos.
+   * Intercambia números aleatoriamente entre boletos sin repetir primeros dígitos.
    */
   private shuffleTickets(tickets: Ticket[], opportunities: number) {
     for (let i = 0; i < tickets.length * opportunities * 2; i++) {
-      let ticketAIndex = Math.floor(Math.random() * tickets.length);
-      let ticketBIndex = Math.floor(Math.random() * tickets.length);
+      const ticketAIndex = Math.floor(Math.random() * tickets.length);
+      const ticketBIndex = Math.floor(Math.random() * tickets.length);
       if (ticketAIndex === ticketBIndex) continue;
 
-      let ticketA = tickets[ticketAIndex];
-      let ticketB = tickets[ticketBIndex];
+      const ticketA = tickets[ticketAIndex];
+      const ticketB = tickets[ticketBIndex];
 
-      let numAIndex = Math.floor(Math.random() * opportunities);
-      let numBIndex = Math.floor(Math.random() * opportunities);
+      const numAIndex = Math.floor(Math.random() * opportunities);
+      const numBIndex = Math.floor(Math.random() * opportunities);
 
-      let numA = ticketA.numbers[numAIndex];
-      let numB = ticketB.numbers[numBIndex];
+      const numA = ticketA.numbers[numAIndex];
+      const numB = ticketB.numbers[numBIndex];
 
       if (
         this.isValidSwap(ticketA.numbers, numA, numB) &&
@@ -210,7 +201,7 @@ export class SeriesService {
   }
 
   /**
-   * Verifica si un intercambio de números en un boleto sigue cumpliendo la restricción de primeros dígitos únicos.
+   * Verifica que el intercambio mantiene la unicidad de primeros dígitos.
    */
   private isValidSwap(
     ticketNumbers: string[],
@@ -218,8 +209,8 @@ export class SeriesService {
     newNum: string
   ): boolean {
     if (!oldNum || !newNum) return false;
-    let tempNumbers = ticketNumbers.map((n) => (n === oldNum ? newNum : n));
-    let uniqueFirstDigits = new Set(tempNumbers.map((n) => n[0]));
+    const tempNumbers = ticketNumbers.map((n) => (n === oldNum ? newNum : n));
+    const uniqueFirstDigits = new Set(tempNumbers.map((n) => n[0]));
     return uniqueFirstDigits.size === tempNumbers.length;
   }
 }

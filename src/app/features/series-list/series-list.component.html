@@ -24,19 +24,13 @@
       <div class="col-12 md:col-5 lg:col-4 xl:col-3">
         <mat-card class="series-card">
           <mat-card-header>
-            <mat-card-title
-              >{{ series.description | slice : 0 : 70 }}...</mat-card-title
+            <mat-card-title>Sorteo: {{ series.date }}</mat-card-title>
+            <mat-card-subtitle
+              >Boletos impresos: {{ series.printedTickets }} de
+              {{ series.totalTickets }}</mat-card-subtitle
             >
-            <mat-card-subtitle>{{ series.title }}</mat-card-subtitle>
           </mat-card-header>
-          <mat-card-content class="mt-2">
-            <p>
-              <strong>Sorteo {{ series.date }} </strong>
-            </p>
-            <p>
-              <strong>{{ series.printedTickets }} Boletos impresos</strong>
-            </p>
-          </mat-card-content>
+          <mat-card-content> </mat-card-content>
           <mat-card-actions>
             <button
               mat-button

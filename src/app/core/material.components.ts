@@ -15,6 +15,8 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
+import { MatMenuModule } from '@angular/material/menu';
 
 export const MATERIAL_COMPONENTS = [
   MatButtonModule,
@@ -34,4 +36,6 @@ export const MATERIAL_COMPONENTS = [
   MatProgressBarModule,
   MatChipsModule,
   MatProgressSpinnerModule,
+  MatBottomSheetModule,
+  MatMenuModule,
 ];

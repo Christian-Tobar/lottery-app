@@ -1,0 +1,40 @@
+<div class="login-container">
+  <h2>Iniciar sesión</h2>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <label>
+      Email:
+      <input type="email" formControlName="email" />
+    </label>
+    <div
+      class="error"
+      *ngIf="form.controls.email.touched && form.controls.email.invalid"
+    >
+      <small *ngIf="form.controls.email.errors?.['required']"
+        >El email es obligatorio.</small
+      >
+      <small *ngIf="form.controls.email.errors?.['email']"
+        >Email inválido.</small
+      >
+    </div>
+
+    <label>
+      Contraseña:
+      <input type="password" formControlName="password" />
+    </label>
+    <div
+      class="error"
+      *ngIf="form.controls.password.touched && form.controls.password.invalid"
+    >
+      <small>La contraseña es obligatoria.</small>
+    </div>
+
+    <button type="submit" [disabled]="form.invalid || loading">
+      {{ loading ? "Cargando..." : "Entrar" }}
+    </button>
+
+    <div class="error" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+  </form>
+</div>

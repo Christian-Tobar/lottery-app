@@ -16,9 +16,11 @@ export class TicketDrawingService {
     this.qrImage.crossOrigin = 'anonymous';
     this.qrImage.src = 'assets/images/CodigoQR.png';
 
+    /*
     this.qrImage.onload = () => {
       console.log('QR Image loaded');
     };
+    */
   }
 
   setupCanvas(canvas: ElementRef<HTMLCanvasElement>) {
@@ -43,35 +45,34 @@ export class TicketDrawingService {
 
   drawTicket(
     canvas: ElementRef<HTMLCanvasElement>,
-    ticketTitle: string,
-    ticketDescription: string,
-    ticketPrice: number,
-    ticketDate: string,
+    fontColor: string,
+    ticketDate: string, // Formato esperado: "DD/MM/YYYY"
     ticketContact: string,
     selectedOpportunity: number,
     selectedFigure: number
   ) {
     if (!canvas) return;
 
-    const ctx = canvas.nativeElement.getContext('2d');
-    if (!ctx) return;
+    const context = canvas.nativeElement.getContext('2d');
+    if (!context) return;
+    const ctx = context;
 
     const width = this.CANVAS_WIDTH;
     const height = this.CANVAS_HEIGHT;
-    const margin = 25; // Margen alrededor del borde
+    const margin = 25;
 
     ctx.clearRect(0, 0, width, height);
 
-    // Fondo del boleto
-    ctx.fillStyle = '#f9f6ec'; // Color crema de fondo
+    // Fondo
+    ctx.fillStyle = '#f9f6ec';
     ctx.fillRect(0, 0, width, height);
 
-    // Borde negro con margen
+    // Borde
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 4;
     ctx.strokeRect(margin, margin, width - 2 * margin, height - 2 * margin);
 
-    // Cargar y dibujar el código QR en la esquina superior derecha
+    // QR en esquina superior derecha
     const qrSize = 250;
     const qrX = width - margin - qrSize;
     const qrY = margin;
@@ -84,204 +85,175 @@ export class TicketDrawingService {
       };
     }
 
-    // Configuración del texto
+    // === FECHA DEBAJO DEL QR ===
+    const [day, month, year] = ticketDate.split('/');
+    const monthNames = [
+      'ENE',
+      'FEB',
+      'MAR',
+      'ABR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AGO',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DIC',
+    ];
+    const monthStr = monthNames[parseInt(month) - 1];
+    const dayStr = parseInt(day).toString().padStart(2, '0');
+    const yearStr = year;
+
+    const dateXCenter = qrX + qrSize / 2;
+    const maxDateWidth = qrSize - 20;
+
+    function adjustFontSize(
+      text: string,
+      initialSize: number,
+      maxWidth: number
+    ): number {
+      let size = initialSize;
+      ctx.font = `bold ${size}px Arial`;
+      while (ctx.measureText(text).width > maxWidth && size > 10) {
+        size -= 1;
+        ctx.font = `bold ${size}px Arial`;
+      }
+      return size;
+    }
+
+    // Tamaños un poco más grandes
+    const monthFontSize = adjustFontSize(monthStr, 55, maxDateWidth);
+    const dayFontSize = adjustFontSize(dayStr, 100, maxDateWidth);
+    const yearFontSize = adjustFontSize(yearStr, 50, maxDateWidth);
+
+    const boxX = qrX + 25;
+    const boxY = qrY + qrSize + 50;
+    const boxW = qrSize - 55;
+    const boxH = monthFontSize + dayFontSize + yearFontSize + 50;
+    const radius = 20;
+
+    // === DIBUJAR RECUADRO CON BORDES REDONDEADOS ===
+    ctx.beginPath();
+    ctx.moveTo(boxX + radius, boxY);
+    ctx.lineTo(boxX + boxW - radius, boxY);
+    ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + radius);
+    ctx.lineTo(boxX + boxW, boxY + boxH - radius);
+    ctx.quadraticCurveTo(
+      boxX + boxW,
+      boxY + boxH,
+      boxX + boxW - radius,
+      boxY + boxH
+    );
+    ctx.lineTo(boxX + radius, boxY + boxH);
+    ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - radius);
+    ctx.lineTo(boxX, boxY + radius);
+    ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
+    ctx.stroke();
+
+    // === TÍTULO ENCIMA DEL RECUADRO ===
+    ctx.font = 'bold 24px Arial';
     ctx.fillStyle = '#000';
-    ctx.textAlign = 'center'; // Centramos el texto
+    ctx.textAlign = 'center';
+    ctx.fillText('FECHA SORTEO', dateXCenter, boxY - 10);
 
-    // **DIBUJAR TÍTULO**
-    ctx.font = 'bold 80px Arial';
-    const maxTitleWidth = qrX - 2 * margin; // Espacio disponible antes del QR
-    const lineHeight = 60; // Espaciado entre líneas para el título
-    const titleLines = this.wrapText(ctx, ticketTitle, maxTitleWidth);
+    const dateStartY = qrY + qrSize + 20;
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'center';
 
-    // Posición centrada entre el margen y el QR
-    const textCenterX = (margin + qrX) / 2;
-    const titleStartY = qrY + 95; // Ajuste para mantener alineación con el QR
+    ctx.font = `bold ${monthFontSize}px Arial`;
+    ctx.fillText(monthStr, dateXCenter, dateStartY + 100);
 
-    titleLines.forEach((line, index) => {
-      ctx.fillText(line, textCenterX, titleStartY + index * lineHeight);
-    });
+    ctx.font = `bold ${dayFontSize}px Arial`;
+    ctx.fillText(dayStr, dateXCenter, dateStartY + 85 + dayFontSize + 5);
 
-    // **DIBUJAR DESCRIPCIÓN**
-    let descriptionFontSize = 48; // Tamaño inicial de la fuente para la descripción
-    const descriptionMaxWidth = maxTitleWidth; // El ancho de la descripción es el mismo que el del título
-    let descriptionLineHeight = 45; // Este es el interlineado inicial
-    let descriptionStartY = titleStartY + titleLines.length * lineHeight; // Espaciado justo debajo del título
-
-    // Función para dividir la descripción en líneas de acuerdo al ancho máximo
-    let descriptionLines = this.wrapTextForDescription(
-      ctx,
-      ticketDescription,
-      descriptionMaxWidth,
-      descriptionFontSize
-    );
-
-    // Calcular el total de la altura que ocupa la descripción
-    let descriptionHeight = descriptionLines.length * descriptionLineHeight;
-
-    // Espacio disponible debajo de la descripción
-    const availableSpace = qrY + qrSize + 80 - descriptionStartY; // Espacio disponible para la descripción
-
-    // Si la altura de la descripción excede el espacio disponible, reducimos el tamaño de la fuente
-    while (descriptionHeight > availableSpace && descriptionFontSize > 20) {
-      descriptionFontSize -= 2; // Reducir el tamaño de la fuente para la descripción
-      ctx.font = `normal ${descriptionFontSize}px Arial`; // Actualizamos la fuente con el nuevo tamaño
-      descriptionLineHeight = descriptionFontSize * 0.95; // Ajustar el interlineado también en función del tamaño de la fuente
-
-      // Volver a calcular las líneas de la descripción con el nuevo tamaño de fuente
-      descriptionLines = this.wrapTextForDescription(
-        ctx,
-        ticketDescription,
-        descriptionMaxWidth,
-        descriptionFontSize
-      );
-
-      descriptionHeight = descriptionLines.length * descriptionLineHeight; // Nuevamente calcular la altura total
-    }
-
-    // Dibuja la descripción con el tamaño de fuente ajustado
-    descriptionLines.forEach((line, index) => {
-      ctx.fillText(
-        line,
-        textCenterX,
-        descriptionStartY + index * descriptionLineHeight
-      );
-    });
-
-    // **DIBUJAR "VALOR" Y MONTO**
-    const valueTextY = qrY + qrSize + 30; // Espaciado debajo del QR
-    const valueAmountY = valueTextY + 60; // Espaciado para el monto
-
-    ctx.font = 'bold 45px Arial'; // Fuente para "VALOR"
-    ctx.fillText('VALOR', qrX + qrSize / 2, valueTextY);
-
-    const formattedPrice = `$${Number(ticketPrice).toLocaleString('es-CO')}`;
-
-    // Ajustar dinámicamente el tamaño de la fuente para el monto
-    let fontSize = 60; // Tamaño inicial de la fuente
-    ctx.font = `bold ${fontSize}px Arial`; // Fuente para el monto
-
-    // Comprobar si el texto se sale del área del QR
-    let textWidth = ctx.measureText(formattedPrice).width;
-    while (textWidth > qrSize && fontSize > 20) {
-      fontSize -= 5; // Reducir el tamaño de la fuente si el texto es demasiado grande
-      ctx.font = `bold ${fontSize}px Arial`; // Actualizar la fuente con el nuevo tamaño
-      textWidth = ctx.measureText(formattedPrice).width; // Medir el nuevo ancho del texto
-    }
-
-    // Dibujar el monto formateado
-    ctx.fillText(formattedPrice, qrX + qrSize / 2, valueAmountY);
-
-    // **DIBUJAR FECHA DE SORTEO Y CONTACTO**
-    const drawDateAndContactY = valueAmountY; // Espaciado debajo del monto
-
-    const drawDate = `Fecha de sorteo: ${ticketDate}`;
-    const drawContact = `Contacto: ${ticketContact}`;
-
-    // Establecemos el tamaño de la fuente
-    const dateAndContactFontSize = 30;
-    ctx.font = `normal ${dateAndContactFontSize}px Arial`; // Fuente normal para la fecha y contacto
-
-    // Medimos el ancho total de la línea combinada (fecha y contacto)
-    const combinedText = drawDate + ' | ' + drawContact;
-
-    // Dibujamos el texto combinado (fecha y contacto) en una sola línea, alineado con el monto
+    ctx.font = `bold ${yearFontSize}px Arial`;
     ctx.fillText(
-      combinedText,
-      textCenterX, // Centramos en el mismo eje X que el monto
-      drawDateAndContactY
+      yearStr,
+      dateXCenter,
+      dateStartY + dayFontSize + 90 + yearFontSize + 5
     );
 
-    // **DIBUJAR OPORTUNIDADES COMO "X"**
-    const totalOpportunities = selectedOpportunity; // Número de oportunidades seleccionadas
-    const figuresPerOpportunity = selectedFigure; // Número de cifras por oportunidad
-    const opportunityPlaceholder = 'X'.repeat(figuresPerOpportunity); // Genera "XX", "XXXX", etc.
+    // === Oportunidades estilo "caras de dado" ===
+    const opportunityPlaceholder = 'X'.repeat(selectedFigure);
 
-    if (totalOpportunities > 0) {
-      const availableHeight = height - valueAmountY + 30; // Espacio disponible debajo del monto hasta el borde inferior
-      const availableWidth = width - 2 * margin; // Ancho total disponible
+    const areaX = margin + 20;
+    const areaY = margin + 20;
+    const areaW = qrX - areaX - 20; // hasta el inicio del QR
+    const areaH = height - margin * 2 - 20;
 
-      let fontSize = 100; // Tamaño inicial de la fuente
-      ctx.font = `bold ${fontSize}px Arial`;
+    const centerX = areaX + areaW / 2;
+    const centerY = areaY + areaH / 2;
+
+    const drawSingleOpportunity = (x: number, y: number) => {
+      ctx.font = `bold 100px Arial`;
+      ctx.fillStyle = fontColor;
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic'; // importante para usar ascent/descent
 
-      let opportunitiesArray = Array(totalOpportunities).fill(
-        opportunityPlaceholder
-      );
-      let firstLine = '';
-      let secondLine = '';
+      const metrics = ctx.measureText(opportunityPlaceholder);
+      const textHeight =
+        metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
 
-      // **Determinar cuántas caben en la primera línea**
-      while (opportunitiesArray.length > 0) {
-        let testLine =
-          (firstLine ? firstLine + '  ' : '') + opportunitiesArray[0];
-        let testWidth = ctx.measureText(testLine).width;
+      // Ajustamos Y para centrar el texto verticalmente
+      const correctedY =
+        y + metrics.actualBoundingBoxAscent - textHeight / 2 - 7;
 
-        if (testWidth <= availableWidth) {
-          firstLine = testLine;
-          opportunitiesArray.shift();
-        } else {
-          break;
+      ctx.fillText(opportunityPlaceholder, x, correctedY);
+    };
+
+    const drawPositions: Record<number, () => void> = {
+      1: () => drawSingleOpportunity(centerX, centerY),
+      2: () => {
+        drawSingleOpportunity(centerX, areaY + areaH * 0.25);
+        drawSingleOpportunity(centerX, areaY + areaH * 0.75);
+      },
+      3: () => {
+        drawSingleOpportunity(centerX, areaY + areaH * 0.2);
+        drawSingleOpportunity(centerX, centerY);
+        drawSingleOpportunity(centerX, areaY + areaH * 0.8);
+      },
+      4: () => {
+        drawSingleOpportunity(areaX + areaW * 0.25, areaY + areaH * 0.25);
+        drawSingleOpportunity(areaX + areaW * 0.75, areaY + areaH * 0.25);
+        drawSingleOpportunity(areaX + areaW * 0.25, areaY + areaH * 0.75);
+        drawSingleOpportunity(areaX + areaW * 0.75, areaY + areaH * 0.75);
+      },
+      5: () => {
+        drawPositions[4]();
+        drawSingleOpportunity(centerX, centerY);
+      },
+      6: () => {
+        drawSingleOpportunity(areaX + areaW * 0.3, areaY + areaH * 0.2);
+        drawSingleOpportunity(areaX + areaW * 0.3, centerY);
+        drawSingleOpportunity(areaX + areaW * 0.3, areaY + areaH * 0.8);
+        drawSingleOpportunity(areaX + areaW * 0.7, areaY + areaH * 0.2);
+        drawSingleOpportunity(areaX + areaW * 0.7, centerY);
+        drawSingleOpportunity(areaX + areaW * 0.7, areaY + areaH * 0.8);
+      },
+    };
+
+    const draw = drawPositions[selectedOpportunity];
+    if (draw) {
+      draw();
+    } else {
+      // Para más de 6 oportunidades: distribuir en grilla
+      const cols = Math.ceil(Math.sqrt(selectedOpportunity));
+      const rows = Math.ceil(selectedOpportunity / cols);
+      const spacingX = areaW / (cols + 1);
+      const spacingY = areaH / (rows + 1);
+      let count = 0;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (count >= selectedOpportunity) break;
+          const x = areaX + spacingX * (c + 1);
+          const y = areaY + spacingY * (r + 1);
+          drawSingleOpportunity(x, y);
+          count++;
         }
       }
-
-      // **El resto se va a la segunda línea**
-      secondLine = opportunitiesArray.join('  ');
-
-      // **Si la segunda línea también es demasiado larga, reducir fuente**
-      while (
-        ctx.measureText(secondLine).width > availableWidth &&
-        fontSize > 20
-      ) {
-        fontSize -= 5;
-        ctx.font = `bold ${fontSize}px Arial`;
-      }
-
-      // **Cálculo para centrar las líneas verticalmente**
-      const lineSpacing = fontSize * 1.2; // Espaciado entre líneas
-      const totalTextHeight = secondLine ? lineSpacing : 0; // Si hay segunda línea, usar doble espaciado
-      const centerY = valueAmountY + availableHeight / 2 - totalTextHeight / 2;
-
-      // **Dibujar las líneas**
-      if (firstLine) ctx.fillText(firstLine, width / 2, centerY);
-      if (secondLine)
-        ctx.fillText(secondLine, width / 2, centerY + lineSpacing);
     }
-  }
-
-  /**
-   * Función para dividir texto en múltiples líneas si no cabe en un ancho dado.
-   * Función adaptada para la descripción, manteniendo la misma fuente y tamaño.
-   */
-  private wrapTextForDescription(
-    ctx: CanvasRenderingContext2D,
-    text: string,
-    maxWidth: number,
-    fontSize: number
-  ) {
-    const words = text.split(/\s+/); // Separar las palabras por espacios
-    let line = '';
-    const lines: string[] = [];
-
-    ctx.font = `normal ${fontSize}px Arial`; // Establecer el tamaño de fuente adecuado
-
-    for (let i = 0; i < words.length; i++) {
-      const testLine = line + words[i] + ' ';
-      const testWidth = ctx.measureText(testLine).width;
-
-      if (testWidth > maxWidth && line.trim().length > 0) {
-        lines.push(line); // Si la línea excede el ancho, agregarla
-        line = words[i] + ' '; // Comenzar nueva línea con la palabra actual
-      } else {
-        line = testLine; // Continuar agregando la palabra a la línea actual
-      }
-    }
-
-    if (line.trim().length > 0) {
-      lines.push(line); // Agregar la última línea
-    }
-
-    return lines;
   }
 
   /**
@@ -324,9 +296,6 @@ export class TicketDrawingService {
 
   drawTicketWithoutQRAndOpportunities(
     ctx: CanvasRenderingContext2D,
-    ticketTitle: string,
-    ticketDescription: string,
-    ticketPrice: number,
     ticketDate: string,
     ticketContact: string
   ) {
@@ -338,142 +307,115 @@ export class TicketDrawingService {
 
     ctx.clearRect(0, 0, width, height);
 
-    // Fondo del boleto
-    ctx.fillStyle = '#f9f6ec'; // Color crema de fondo
+    // Fondo
+    ctx.fillStyle = '#f9f6ec';
     ctx.fillRect(0, 0, width, height);
 
-    // Borde negro con margen
+    // Borde
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 4;
     ctx.strokeRect(margin, margin, width - 2 * margin, height - 2 * margin);
 
-    // Cargar y dibujar el código QR en la esquina superior derecha
+    // QR en esquina superior derecha
     const qrSize = 250;
     const qrX = width - margin - qrSize;
     const qrY = margin;
 
-    if (this.qrImage.complete) {
-      // ctx.drawImage(this.qrImage, qrX, qrY, qrSize, qrSize);
+    // === FECHA DEBAJO DEL QR ===
+    const [day, month, year] = ticketDate.split('/');
+    const monthNames = [
+      'ENE',
+      'FEB',
+      'MAR',
+      'ABR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AGO',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DIC',
+    ];
+    const monthStr = monthNames[parseInt(month) - 1];
+    const dayStr = parseInt(day).toString().padStart(2, '0');
+    const yearStr = year;
+
+    const dateXCenter = qrX + qrSize / 2;
+    const maxDateWidth = qrSize - 20;
+
+    function adjustFontSize(
+      text: string,
+      initialSize: number,
+      maxWidth: number
+    ): number {
+      let size = initialSize;
+      ctx.font = `bold ${size}px Arial`;
+      while (ctx.measureText(text).width > maxWidth && size > 10) {
+        size -= 1;
+        ctx.font = `bold ${size}px Arial`;
+      }
+      return size;
     }
 
-    // Configuración del texto
-    ctx.fillStyle = '#000';
-    ctx.textAlign = 'center'; // Centramos el texto
+    // Tamaños un poco más grandes
+    const monthFontSize = adjustFontSize(monthStr, 55, maxDateWidth);
+    const dayFontSize = adjustFontSize(dayStr, 100, maxDateWidth);
+    const yearFontSize = adjustFontSize(yearStr, 50, maxDateWidth);
 
-    // **DIBUJAR TÍTULO**
-    ctx.font = 'bold 80px Arial';
-    const maxTitleWidth = qrX - 2 * margin; // Espacio disponible antes del QR
-    const lineHeight = 60; // Espaciado entre líneas para el título
-    const titleLines = this.wrapText(ctx, ticketTitle, maxTitleWidth);
+    const boxX = qrX + 25;
+    const boxY = qrY + qrSize + 50;
+    const boxW = qrSize - 55;
+    const boxH = monthFontSize + dayFontSize + yearFontSize + 50;
+    const radius = 20;
 
-    // Posición centrada entre el margen y el QR
-    const textCenterX = (margin + qrX) / 2;
-    const titleStartY = qrY + 95; // Ajuste para mantener alineación con el QR
-
-    titleLines.forEach((line, index) => {
-      ctx.fillText(line, textCenterX, titleStartY + index * lineHeight);
-    });
-
-    // **DIBUJAR DESCRIPCIÓN**
-    let descriptionFontSize = 48; // Tamaño inicial de la fuente para la descripción
-    const descriptionMaxWidth = maxTitleWidth; // El ancho de la descripción es el mismo que el del título
-    let descriptionLineHeight = 45; // Este es el interlineado inicial
-    let descriptionStartY = titleStartY + titleLines.length * lineHeight; // Espaciado justo debajo del título
-
-    // Función para dividir la descripción en líneas de acuerdo al ancho máximo
-    let descriptionLines = this.wrapTextForDescription(
-      ctx,
-      ticketDescription,
-      descriptionMaxWidth,
-      descriptionFontSize
+    // === DIBUJAR RECUADRO CON BORDES REDONDEADOS ===
+    ctx.beginPath();
+    ctx.moveTo(boxX + radius, boxY);
+    ctx.lineTo(boxX + boxW - radius, boxY);
+    ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + radius);
+    ctx.lineTo(boxX + boxW, boxY + boxH - radius);
+    ctx.quadraticCurveTo(
+      boxX + boxW,
+      boxY + boxH,
+      boxX + boxW - radius,
+      boxY + boxH
     );
+    ctx.lineTo(boxX + radius, boxY + boxH);
+    ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - radius);
+    ctx.lineTo(boxX, boxY + radius);
+    ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
+    ctx.stroke();
 
-    // Calcular el total de la altura que ocupa la descripción
-    let descriptionHeight = descriptionLines.length * descriptionLineHeight;
+    // === TÍTULO ENCIMA DEL RECUADRO ===
+    ctx.font = 'bold 24px Arial';
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'center';
+    ctx.fillText('FECHA SORTEO', dateXCenter, boxY - 10);
 
-    // Espacio disponible debajo de la descripción
-    const availableSpace = qrY + qrSize + 80 - descriptionStartY; // Espacio disponible para la descripción
+    const dateStartY = qrY + qrSize + 20;
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'center';
 
-    // Si la altura de la descripción excede el espacio disponible, reducimos el tamaño de la fuente
-    while (descriptionHeight > availableSpace && descriptionFontSize > 20) {
-      descriptionFontSize -= 2; // Reducir el tamaño de la fuente para la descripción
-      ctx.font = `normal ${descriptionFontSize}px Arial`; // Actualizamos la fuente con el nuevo tamaño
-      descriptionLineHeight = descriptionFontSize * 0.95; // Ajustar el interlineado también en función del tamaño de la fuente
+    ctx.font = `bold ${monthFontSize}px Arial`;
+    ctx.fillText(monthStr, dateXCenter, dateStartY + 100);
 
-      // Volver a calcular las líneas de la descripción con el nuevo tamaño de fuente
-      descriptionLines = this.wrapTextForDescription(
-        ctx,
-        ticketDescription,
-        descriptionMaxWidth,
-        descriptionFontSize
-      );
+    ctx.font = `bold ${dayFontSize}px Arial`;
+    ctx.fillText(dayStr, dateXCenter, dateStartY + 85 + dayFontSize + 5);
 
-      descriptionHeight = descriptionLines.length * descriptionLineHeight; // Nuevamente calcular la altura total
-    }
-
-    // Dibuja la descripción con el tamaño de fuente ajustado
-    descriptionLines.forEach((line, index) => {
-      ctx.fillText(
-        line,
-        textCenterX,
-        descriptionStartY + index * descriptionLineHeight
-      );
-    });
-
-    // **DIBUJAR "VALOR" Y MONTO**
-    const valueTextY = qrY + qrSize + 30; // Espaciado debajo del QR
-    const valueAmountY = valueTextY + 60; // Espaciado para el monto
-
-    ctx.font = 'bold 45px Arial'; // Fuente para "VALOR"
-    ctx.fillText('VALOR', qrX + qrSize / 2, valueTextY);
-
-    const formattedPrice = `$${Number(ticketPrice).toLocaleString('es-CO')}`;
-
-    // Ajustar dinámicamente el tamaño de la fuente para el monto
-    let fontSize = 60; // Tamaño inicial de la fuente
-    ctx.font = `bold ${fontSize}px Arial`; // Fuente para el monto
-
-    // Comprobar si el texto se sale del área del QR
-    let textWidth = ctx.measureText(formattedPrice).width;
-    while (textWidth > qrSize && fontSize > 20) {
-      fontSize -= 5; // Reducir el tamaño de la fuente si el texto es demasiado grande
-      ctx.font = `bold ${fontSize}px Arial`; // Actualizar la fuente con el nuevo tamaño
-      textWidth = ctx.measureText(formattedPrice).width; // Medir el nuevo ancho del texto
-    }
-
-    // Dibujar el monto formateado
-    ctx.fillText(formattedPrice, qrX + qrSize / 2, valueAmountY);
-
-    // **DIBUJAR FECHA DE SORTEO Y CONTACTO**
-    const drawDateAndContactY = valueAmountY; // Espaciado debajo del monto
-
-    const drawDate = `Fecha de sorteo: ${ticketDate}`;
-    const drawContact = `Contacto: ${ticketContact}`;
-
-    // Establecemos el tamaño de la fuente
-    const dateAndContactFontSize = 30;
-    ctx.font = `normal ${dateAndContactFontSize}px Arial`; // Fuente normal para la fecha y contacto
-
-    // Medimos el ancho total de la línea combinada (fecha y contacto)
-    const combinedText = drawDate + ' | ' + drawContact;
-
-    // Dibujamos el texto combinado (fecha y contacto) en una sola línea, alineado con el monto
+    ctx.font = `bold ${yearFontSize}px Arial`;
     ctx.fillText(
-      combinedText,
-      textCenterX, // Centramos en el mismo eje X que el monto
-      drawDateAndContactY
+      yearStr,
+      dateXCenter,
+      dateStartY + dayFontSize + 90 + yearFontSize + 5
     );
   }
 
   generateBackgroundImage(
     canvas: ElementRef<HTMLCanvasElement>,
-    ticketTitle: string,
-    ticketDescription: string,
-    ticketPrice: number,
     ticketDate: string,
     ticketContact: string
   ) {
-    console.log(`Numero de contacto que llega ${ticketContact}`);
     if (!canvas) return;
 
     const ctx = canvas.nativeElement.getContext('2d');
@@ -483,14 +425,7 @@ export class TicketDrawingService {
     ctx.save();
 
     // Dibujar el boleto sin QR y sin oportunidades
-    this.drawTicketWithoutQRAndOpportunities(
-      ctx,
-      ticketTitle,
-      ticketDescription,
-      ticketPrice,
-      ticketDate,
-      ticketContact
-    );
+    this.drawTicketWithoutQRAndOpportunities(ctx, ticketDate, ticketContact);
 
     // Guardar la imagen de fondo
     this.backgroundImage = canvas.nativeElement.toDataURL('image/png');

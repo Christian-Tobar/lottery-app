@@ -9,8 +9,7 @@ export interface ValidatedTicket {
   numbers: string[];
   printed: boolean;
   seriesId: string;
-  title: string;
-  price: number;
+
   date: string;
   printBatchInfo?: {
     batchId: string;
@@ -30,14 +29,12 @@ export interface PrintBatch {
 
 export interface LotterySeries {
   id?: string;
-  title: string;
-  description: string;
-  price: number;
   date: string;
   contact: string;
   opportunities: number;
   figures: number;
   tickets: Ticket[];
+  selectedColor: string;
   totalTickets?: number;
   printedTickets?: number;
   availableTickets?: number;

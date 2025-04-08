@@ -1,0 +1,16 @@
+<div class="p-4">
+  <h3 class="mb-2">Selecciona un color</h3>
+  <div class="color-grid">
+    @for (color of colors; track $index) {
+    <button
+      mat-mini-fab
+      [ngStyle]="{
+        'background-color': color
+      }"
+      class="color-btn"
+      (click)="selectColor(color)"
+      [title]="color"
+    ></button>
+    }
+  </div>
+</div>

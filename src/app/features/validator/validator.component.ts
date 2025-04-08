@@ -41,8 +41,6 @@ export class ValidatorComponent {
   ) {}
 
   async onQrScanned(qrData: string) {
-    console.log('QR escaneado:', qrData);
-
     const ticketDetails = await this.qrValidator.validateQr(qrData);
 
     if (ticketDetails) {

@@ -23,6 +23,8 @@ import {
 } from '@angular/material/core';
 import { NativeDateAdapter } from '@angular/material/core';
 import { LOCALE_ID } from '@angular/core';
+import { MatBottomSheet } from '@angular/material/bottom-sheet';
+import { FontColorPickerComponent } from '../font-color-picker/font-color-picker.component';
 
 // Registrar el idioma español para formateo de fechas
 registerLocaleData(localeEs, 'es');
@@ -84,20 +86,18 @@ export class ParameterizerComponent implements AfterViewInit {
   private dialog = inject(MatDialog);
   private router = inject(Router);
   private ticketDrawingService = inject(TicketDrawingService);
+  private bottomSheet = inject(MatBottomSheet);
 
   // Propiedades del componente
   backgroundImage: string | null = null;
   opportunities = [1, 2, 3, 4, 5, 6];
   figures = [1, 2, 3, 4, 5];
 
-  ticketTitle = '';
-  ticketPrice: number | null = null;
-  ticketSerial = '';
   ticketDate = this.formatDate(new Date());
-  ticketDescription = '';
   ticketContact = '';
   selectedOpportunities: number = 1;
   selectedFigures: number = 1;
+  selectedFontColor: string = '#000000';
 
   // Método que se ejecuta después de que la vista ha sido inicializada
   ngAfterViewInit() {
@@ -111,9 +111,7 @@ export class ParameterizerComponent implements AfterViewInit {
 
     this.ticketDrawingService.drawTicket(
       this.canvas,
-      this.ticketTitle,
-      this.ticketDescription,
-      this.ticketPrice ?? 0,
+      this.selectedFontColor,
       formattedDate, // Se pasa la fecha como cadena en formato DD/MM/YYYY
       this.ticketContact,
       this.selectedOpportunities,
@@ -133,28 +131,34 @@ export class ParameterizerComponent implements AfterViewInit {
       try {
         // Llamar al servicio para generar y guardar la serie en Firestore
         const seriesId = await this.ticketService.generateAndSaveSeries(
-          this.ticketTitle,
-          this.ticketDescription,
-          this.ticketPrice ?? 0,
           formattedDate,
           this.ticketContact,
           this.selectedOpportunities,
-          this.selectedFigures
+          this.selectedFigures,
+          this.selectedFontColor
         );
-
-        console.log('Serie generada y guardada en Firestore.');
 
         if (!seriesId) {
           console.error('Error: No se obtuvo el ID de la serie.');
           return;
         }
 
-        console.log('Redirigiendo a la serie:', seriesId);
         this.router.navigate(['/series', seriesId]); // Redirecciona a la página de detalles de la serie
       } catch (error) {
         console.error('Error al generar la serie:', error);
       } finally {
         dialogRef.close(); // Cierra el diálogo de carga
+      }
+    });
+  }
+
+  openFontColorPicker() {
+    const sheetRef = this.bottomSheet.open(FontColorPickerComponent);
+
+    sheetRef.afterDismissed().subscribe((color: string) => {
+      if (color) {
+        this.selectedFontColor = color;
+        this.drawTicket(); // Redibujar con nuevo color
       }
     });
   }

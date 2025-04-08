@@ -1,7 +1,9 @@
 <mat-toolbar>
-  <button mat-icon-button (click)="sidenav.toggle()">
+  @if (authService.isLoggedIn(); as loggedIn) {
+  <button mat-icon-button (click)="sidenav.toggle()" *ngIf="loggedIn">
     <mat-icon class="text-white">menu</mat-icon>
   </button>
+  }
   <span>Aplicación Lotería</span>
   <span class="toolbar-spacer"></span>
   <button
@@ -18,6 +20,25 @@
   >
     <mat-icon class="text-white">share</mat-icon>
   </button>
+
+  <button
+    *ngIf="authService.isLoggedIn()"
+    mat-icon-button
+    [matMenuTriggerFor]="userMenu"
+    aria-label="Usuario"
+  >
+    <mat-icon class="text-white">account_circle</mat-icon>
+  </button>
+
+  <mat-menu #userMenu="matMenu">
+    <button mat-menu-item disabled>
+      {{ authService.currentUser?.email }}
+    </button>
+    <button mat-menu-item (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      <span>Cerrar sesión</span>
+    </button>
+  </mat-menu>
 </mat-toolbar>
 
 <mat-sidenav-container>

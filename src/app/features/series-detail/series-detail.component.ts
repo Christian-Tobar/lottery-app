@@ -15,7 +15,7 @@ interface NumberedPrintBatch extends PrintBatch {
 @Component({
   selector: 'app-series-detail',
   standalone: true,
-  imports: [MATERIAL_COMPONENTS, CommonModule, CurrencyPipe],
+  imports: [MATERIAL_COMPONENTS, CommonModule],
   templateUrl: './series-detail.component.html',
   styleUrl: './series-detail.component.scss',
 })
@@ -99,7 +99,6 @@ export class SeriesDetailComponent {
       return;
     }
 
-    console.log('Imprimiendo boletos:', ticketsToPrint);
     this.pdfticket.generateTicketsPdf(series, ticketsToPrint);
 
     // Registrar la tanda de impresión
@@ -160,7 +159,6 @@ export class SeriesDetailComponent {
     }
 
     // Simulación de impresión
-    console.log('Reimprimiendo boletos:', ticketsToPrint);
     this.pdfticket.generateTicketsPdf(series, ticketsToPrint);
 
     this.isLoading.set(false);

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   Firestore,
   collection,
@@ -29,10 +29,10 @@ const decodeBase64 = (data: string): any =>
   providedIn: 'root',
 })
 export class FirestoreService {
-  constructor(private firestore: Firestore) {}
+  private firestore = inject(Firestore);
 
   /**
-   * Guarda una serie en Firestore y retorna su ID.
+   * Guarda una nueva serie en Firestore, junto con sus boletos codificados en chunks.
    */
   async saveSeries(series: LotterySeries): Promise<string> {
     if (!series || !series.tickets.length) {
@@ -41,9 +41,6 @@ export class FirestoreService {
 
     const seriesRef = collection(this.firestore, 'series');
     const seriesDoc = await addDoc(seriesRef, {
-      title: series.title,
-      description: series.description,
-      price: series.price,
       date: series.date,
       contact: series.contact,
       opportunities: series.opportunities,
@@ -51,6 +48,7 @@ export class FirestoreService {
       totalTickets: series.tickets.length,
       printedTickets: 0,
       availableTickets: series.tickets.length,
+      selectedColor: series.selectedColor,
       createdAt: new Date().toISOString(),
     });
 
@@ -70,9 +68,11 @@ export class FirestoreService {
       try {
         await batch.commit();
       } catch {
+        // En caso de error, espera unos segundos antes de continuar
         await new Promise((resolve) => setTimeout(resolve, 5000));
       }
 
+      // Pausa entre commits para evitar sobrecarga
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
@@ -94,18 +94,16 @@ export class FirestoreService {
 
     return {
       id,
-      title: data['title'] || '',
-      description: data['description'] || '',
-      price: data['price'] || 0,
       date: data['date'] || '',
       contact: data['contact'] || '',
       opportunities: data['opportunities'] || 0,
       figures: data['figures'] || 0,
       tickets: [],
+      selectedColor: data['selectedColor'] || '',
       totalTickets: data['totalTickets'] ?? 0,
       printedTickets: data['printedTickets'] ?? 0,
       availableTickets: data['availableTickets'] ?? data['totalTickets'] ?? 0,
-      createdAt: data['createdAt'] || null, // Recuperamos la fecha de creación
+      createdAt: data['createdAt'] || null,
     };
   }
 
@@ -131,15 +129,15 @@ export class FirestoreService {
         printedTickets: data['printedTickets'] ?? 0,
         availableTickets: data['availableTickets'] ?? data['totalTickets'] ?? 0,
         tickets: [],
+        selectedColor: data['selectedColor'] || '',
         createdAt: data['createdAt'] || '',
       };
     });
   }
 
   /**
-   * Registra una nueva tanda de boletos impresos en Firestore.
+   * Registra una nueva tanda de boletos impresos y actualiza los contadores de la serie.
    */
-
   async registerPrintBatch(
     seriesId: string,
     startIndex: number,
@@ -157,11 +155,11 @@ export class FirestoreService {
     await addDoc(printBatchesRef, {
       startIndex,
       endIndex,
-      ticketIds, // Guardamos los IDs exactos de los boletos
+      ticketIds,
       printedAt: new Date().toISOString(),
     });
 
-    // Actualizar los contadores de la serie
+    // Actualizar contadores de la serie
     const seriesRef = doc(this.firestore, `series/${seriesId}`);
     const seriesSnap = await getDoc(seriesRef);
     if (!seriesSnap.exists()) return;
@@ -177,7 +175,7 @@ export class FirestoreService {
   }
 
   /**
-   * Obtiene el último índice de boleto impreso.
+   * Obtiene el índice más alto de boleto impreso de una serie.
    */
   async getLastPrintedIndex(seriesId: string): Promise<number> {
     if (!seriesId) return 0;
@@ -188,9 +186,8 @@ export class FirestoreService {
     );
     const snapshot = await getDocs(printBatchesRef);
 
-    if (snapshot.empty) return 0; // No hay boletos impresos
+    if (snapshot.empty) return 0;
 
-    // Buscamos el índice más alto de los boletos impresos
     let lastIndex = 0;
     snapshot.forEach((doc) => {
       const data = doc.data();
@@ -202,6 +199,9 @@ export class FirestoreService {
     return lastIndex;
   }
 
+  /**
+   * Recupera todos los boletos (descomprimidos) de una serie.
+   */
   async getTickets(seriesId: string): Promise<Ticket[]> {
     if (!seriesId) return [];
 
@@ -220,7 +220,7 @@ export class FirestoreService {
   }
 
   /**
-   * Obtiene todas las tandas de boletos impresos de una serie.
+   * Recupera todas las tandas de impresión de una serie.
    */
   async getPrintBatches(seriesId: string): Promise<PrintBatch[]> {
     if (!seriesId) return [];

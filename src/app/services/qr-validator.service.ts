@@ -40,8 +40,6 @@ export class QrValidatorService {
         numbers: ticket.numbers,
         printed: ticket.printed,
         seriesId: series.id!,
-        title: series.title,
-        price: series.price,
         date: series.date,
       };
     } catch (error) {

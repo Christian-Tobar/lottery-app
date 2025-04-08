@@ -7,10 +7,9 @@ import { MATERIAL_COMPONENTS } from '../../core/material.components';
 interface Series {
   id: string;
   createdAt: string;
-  title: string;
-  description: string;
   date: string;
   printedTickets: number;
+  totalTickets: number;
 }
 
 @Component({
@@ -38,8 +37,6 @@ export class SeriesListComponent {
     try {
       const seriesData = await this.firestoreService.getAllSeries();
 
-      console.log('Datos obtenidos de Firestore:', seriesData);
-
       // Ordenar por fecha de creación de la más reciente a la más antigua
       this.seriesList = seriesData
         .filter((series) => series.createdAt) // Filtramos las series con fecha válida
@@ -51,13 +48,10 @@ export class SeriesListComponent {
         .map((series) => ({
           id: series.id ?? '',
           createdAt: series.createdAt ?? '',
-          title: series.title,
-          description: series.description ?? '',
           date: series.date,
           printedTickets: series.printedTickets ?? 0,
+          totalTickets: series.totalTickets ?? 0,
         }));
-
-      console.log('Lista ordenada:', this.seriesList);
     } catch (error) {
       this.errorMessage = 'Error al cargar las series';
       console.error(error);
