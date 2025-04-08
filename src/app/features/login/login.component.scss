@@ -45,3 +45,22 @@
     font-size: 0.85rem;
   }
 }
+
+.login-container {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  text-align: center; // <-- centra el texto y logo
+}
+
+.logo-container {
+  margin-bottom: 1rem;
+
+  img {
+    max-width: 120px;
+    height: auto;
+  }
+}
