@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, NgZone } from '@angular/core';
 import {
   Auth,
   signInWithEmailAndPassword,
@@ -23,27 +23,31 @@ export class AuthService {
   authReady: Promise<void>;
 
   constructor() {
-    // Creamos una promesa para saber cuándo se resuelve el estado de autenticación
+    // PROMESA PARA SABER CUÁNDO EL ESTADO DE AUTENTICACIÓN ESTÁ DISPONIBLE
     this.authReady = new Promise<void>((resolve) => {
       this.authReadyResolve = resolve;
     });
 
-    // Escuchamos los cambios en el estado de autenticación
+    // ESCUCHA LOS CAMBIOS EN EL ESTADO DE AUTENTICACIÓN
     onAuthStateChanged(this.auth, (user) => {
       this.currentUser = user;
 
-      // Resolvemos la promesa solo una vez cuando obtenemos respuesta
+      // RESUELVE LA PROMESA SOLO UNA VEZ TRAS OBTENER RESPUESTA
       if (this.authReadyResolve) {
         this.authReadyResolve();
         this.authReadyResolve = undefined;
       }
     });
+
+    // DETECTA CIERRE DE PESTAÑA/NAVEGADOR Y CIERRA SESIÓN
+    window.addEventListener('beforeunload', () => {
+      if (this.currentUser) {
+        signOut(this.auth);
+      }
+    });
   }
 
-  /**
-   * Inicia sesión con email y contraseña.
-   * Solo permite el acceso si el usuario está marcado como autorizado en Firestore.
-   */
+  // INICIA SESIÓN CON EMAIL Y CONTRASEÑA
   async login(email: string, password: string): Promise<boolean> {
     try {
       const credential = await signInWithEmailAndPassword(
@@ -54,34 +58,30 @@ export class AuthService {
 
       this.currentUser = credential.user;
 
+      // VERIFICA AUTORIZACIÓN DEL USUARIO EN FIRESTORE
       const docRef = doc(this.firestore, 'authorization', credential.user.uid);
       const docSnap = await getDoc(docRef);
 
-      // Verifica si el usuario está autorizado en la colección 'authorization'
       if (docSnap.exists() && docSnap.data()['authorized'] === true) {
         return true;
       } else {
+        // Cierra sesión si el usuario no está autorizado
         await this.logout();
         throw new Error('Usuario no autorizado');
       }
     } catch (err) {
-      // En caso de error en login o autorización, retorna false
       console.error('[Login error]', err);
       return false;
     }
   }
 
-  /**
-   * Cierra la sesión del usuario y redirige a /login
-   */
+  // CIERRA SESIÓN Y REDIRIGE A /login
   logout() {
     this.currentUser = null;
     return signOut(this.auth).then(() => this.router.navigate(['/login']));
   }
 
-  /**
-   * Retorna true si hay un usuario autenticado
-   */
+  // RETORNA TRUE SI HAY UN USUARIO AUTENTICADO
   isLoggedIn(): boolean {
     return this.currentUser !== null;
   }

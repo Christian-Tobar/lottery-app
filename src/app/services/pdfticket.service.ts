@@ -8,19 +8,20 @@ import { TicketDrawingService } from './ticket-drawing.service';
   providedIn: 'root',
 })
 export class PdfticketService {
-  // Cache de imágenes de fondo por ID de serie (mejora el rendimiento)
+  // Cache de imágenes de fondo del boleto por ID de serie
   private backgroundCache = new Map<string, string>();
 
   constructor(private ticketDrawingService: TicketDrawingService) {}
 
-  /**
-   * Genera una imagen de fondo personalizada para el boleto
-   * @param ticketDate Fecha del sorteo
-   * @param ticketContact Información de contacto
-   */
+  // GENERA UNA IMAGEN DE FONDO PERSONALIZADA PARA EL BOLETO
   private async generateBackgroundImage(
+    ticketTitle: string,
+    ticketDescription: string,
     ticketDate: string,
-    ticketContact: string
+    ticketContact: string,
+    ticketLogo: boolean,
+    gracePeriodValue: number,
+    gracePeriodUnit: string
   ): Promise<string> {
     return new Promise((resolve) => {
       const newCanvas = document.createElement('canvas');
@@ -30,12 +31,17 @@ export class PdfticketService {
         nativeElement: newCanvas,
       } as ElementRef<HTMLCanvasElement>;
 
-      // Inicializa el canvas y dibuja el fondo
+      // Inicializa el canvas y dibuja el fondo personalizado
       this.ticketDrawingService.setupCanvas(canvasRef);
       this.ticketDrawingService.generateBackgroundImage(
         canvasRef,
+        ticketTitle,
+        ticketDescription,
         ticketDate,
-        ticketContact
+        ticketContact,
+        ticketLogo,
+        gracePeriodValue,
+        gracePeriodUnit
       );
 
       // Se espera un momento para asegurar el renderizado del canvas
@@ -45,11 +51,7 @@ export class PdfticketService {
     });
   }
 
-  /**
-   * Genera un PDF con todos los boletos de una serie.
-   * @param series Información de la serie (fecha, color, contacto, etc.)
-   * @param tickets Lista de boletos con números únicos y IDs
-   */
+  // GENERA UN PDF CON BOLETOS ESPECÍFICOS DE UNA SERIE
   async generateTicketsPdf(series: any, tickets: any[]) {
     const doc = new jsPDF({
       orientation: 'portrait',
@@ -59,12 +61,17 @@ export class PdfticketService {
 
     const seriesId = series.id;
 
-    // Obtener imagen de fondo de la cache o generar una nueva
+    // Obtener imagen de fondo desde caché, o generar una nueva si no existe
     let backgroundImage = this.backgroundCache.get(seriesId);
     if (!backgroundImage) {
       backgroundImage = await this.generateBackgroundImage(
+        series.ticketTitle,
+        series.ticketDescription,
         series.date,
-        series.contact
+        series.contact,
+        series.ticketLogo,
+        series.gracePeriodValue,
+        series.gracePeriodUnit
       );
       this.backgroundCache.set(seriesId, backgroundImage);
     }
@@ -76,7 +83,7 @@ export class PdfticketService {
     let ticketCounter = 0;
 
     for (const ticket of tickets) {
-      // Cada hoja del PDF contiene hasta 10 boletos
+      // Cada página del PDF contiene hasta 10 boletos
       if (ticketCounter >= 10) {
         doc.addPage();
         x = 0;
@@ -84,10 +91,11 @@ export class PdfticketService {
         ticketCounter = 0;
       }
 
-      // Codificamos la info del boleto en base64 para generar el QR
+      // Codificar info del boleto en base64 para el QR
       const rawData = JSON.stringify({ s: series.id, t: ticket.id });
       const qrData = Buffer.from(rawData).toString('base64');
 
+      // Generar código QR
       const qrImage = await QRCode.toDataURL(qrData, {
         color: {
           dark: '#000000',
@@ -95,7 +103,7 @@ export class PdfticketService {
         },
       });
 
-      // === Dibujo general del ticket ===
+      // Dibujo del borde del boleto y fondo
       const margin = 0.2;
       doc.setLineWidth(0.05);
       doc.setDrawColor(0, 0, 0);
@@ -109,6 +117,7 @@ export class PdfticketService {
 
       doc.addImage(backgroundImage, 'PNG', x, y, ticketWidth, ticketHeight);
 
+      // Dibuja el QR en la esquina superior derecha
       doc.addImage(
         qrImage,
         'PNG',
@@ -118,25 +127,50 @@ export class PdfticketService {
         2
       );
 
-      // === Números del boleto ===
+      // ÁREA PARA LOS NÚMEROS DEL BOLETO
       const selectedOpportunity = ticket.numbers.length;
-      const areaX = x - 0.4;
-      const areaY = y + 0.5;
-      const areaW = ticketWidth - 1;
-      const areaH = ticketHeight - 1;
+      const areaX = x + margin;
+      const areaY = y + this.mapValueFromAToB(series.startRectAreaY);
+      const areaW = ticketWidth - 2 - margin * 2;
+      const areaH = Math.abs(
+        this.mapValueFromAToB(series.endRectAreaY) -
+          this.mapValueFromAToB(series.startRectAreaY)
+      );
       const centerX = areaX + areaW / 2;
       const centerY = areaY + areaH / 2;
 
-      doc.setFontSize(30);
+      // Dibuja un rectángulo rojo para marcar el área
+
+      // doc.setDrawColor(255, 0, 0); // rojo
+      // doc.setLineWidth(0.03);
+      // doc.rect(areaX, areaY, areaW, areaH);
+
+      // Cálculo del tamaño dinámico de fuente
+      const estimatedCols = Math.ceil(Math.sqrt(selectedOpportunity));
+      const estimatedRows = Math.ceil(selectedOpportunity / estimatedCols);
+      const spacingX = areaW / (estimatedCols + 1);
+      const spacingY = areaH / (estimatedRows + 1);
+
+      const maxFontSizeX = spacingX * 9;
+      const maxFontSizeY = spacingY * 9;
+      const dynamicFontSize = Math.min(maxFontSizeX, maxFontSizeY) * 2.83465;
+
+      // Se reduce el tamaño de fuente en los layouts tipo dado (4 a 6 números)
+      let fontSizeFactor = 1;
+      if (selectedOpportunity >= 4 && selectedOpportunity <= 6) {
+        fontSizeFactor = 0.8;
+      }
+
+      doc.setFontSize(dynamicFontSize * fontSizeFactor);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(series.selectedColor);
 
-      // Dibuja un número centrado
+      // FUNCIÓN PARA DIBUJAR UN NÚMERO CENTRADO
       const drawSingleNumber = (cx: number, cy: number, value: string) => {
         doc.text(value, cx, cy, { align: 'center', baseline: 'middle' });
       };
 
-      // Posiciones predefinidas tipo dado
+      // POSICIONES PREDEFINIDAS DE NÚMEROS TIPO DADO
       const drawPositions: Record<number, () => void> = {
         1: () => drawSingleNumber(centerX, centerY, ticket.numbers[0]),
         2: () => {
@@ -144,9 +178,17 @@ export class PdfticketService {
           drawSingleNumber(centerX, areaY + areaH * 0.75, ticket.numbers[1]);
         },
         3: () => {
-          drawSingleNumber(centerX, areaY + areaH * 0.2, ticket.numbers[0]);
+          drawSingleNumber(
+            areaX + areaW * 0.2,
+            areaY + areaH * 0.2,
+            ticket.numbers[0]
+          );
           drawSingleNumber(centerX, centerY, ticket.numbers[1]);
-          drawSingleNumber(centerX, areaY + areaH * 0.8, ticket.numbers[2]);
+          drawSingleNumber(
+            areaX + areaW * 0.8,
+            areaY + areaH * 0.8,
+            ticket.numbers[2]
+          );
         },
         4: () => {
           drawSingleNumber(
@@ -204,12 +246,18 @@ export class PdfticketService {
       if (drawPositions[selectedOpportunity]) {
         drawPositions[selectedOpportunity]();
       } else {
-        // Si hay más de 6 números, los organizamos en una cuadrícula
+        // Cuando hay más de 6 números, se dibujan en una cuadrícula
         const cols = Math.ceil(Math.sqrt(selectedOpportunity));
         const rows = Math.ceil(selectedOpportunity / cols);
         const spacingX = areaW / (cols + 1);
         const spacingY = areaH / (rows + 1);
         let count = 0;
+
+        const maxFontSizeX = spacingX * 0.6;
+        const maxFontSizeY = spacingY * 0.6;
+        const maxFontSize = Math.min(maxFontSizeX, maxFontSizeY) * 2.83465;
+
+        doc.setFontSize(maxFontSize);
 
         for (let r = 0; r < rows; r++) {
           for (let c = 0; c < cols; c++) {
@@ -222,7 +270,7 @@ export class PdfticketService {
         }
       }
 
-      // Posicionamiento del siguiente boleto en el PDF
+      // Ajuste de posición para el siguiente boleto
       ticketCounter++;
       if (ticketCounter % 2 === 0) {
         x = 0;
@@ -232,7 +280,17 @@ export class PdfticketService {
       }
     }
 
-    // Guardar el archivo PDF con el ID de la serie
+    // Guarda el archivo PDF con el id de la serie
     doc.save(`boletos_${series.id}.pdf`);
+  }
+
+  // Mapea un valor entre dos rangos
+  mapValueFromAToB(value: number): number {
+    const fromMin = 25;
+    const fromMax = 635;
+    const toMin = 0.2;
+    const toMax = 5.388;
+
+    return ((value - fromMin) * (toMax - toMin)) / (fromMax - fromMin) + toMin;
   }
 }

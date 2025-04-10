@@ -1,8 +1,37 @@
 <div class="page-container">
   <div class="grid">
-    <div class="col-12 md:col-5 p-5">
+    <div class="col-12 pt-4 pl-5"><h3>Personalizar Boleto</h3></div>
+    <div class="col-12 md:col-6 p-5 pt-1 md:pr-0">
       <div class="grid">
-        <div class="col-12 md:col-6 p-2">
+        <div class="col-12 p-2">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Título</mat-label>
+            <input
+              matInput
+              placeholder="Ej: Lotería Millonaria"
+              [(ngModel)]="ticketTitle"
+              (ngModelChange)="drawTicket()"
+            />
+            <mat-icon matSuffix class="material-symbols-outlined"
+              >title</mat-icon
+            >
+          </mat-form-field>
+        </div>
+        <div class="col-12 p-2">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Descripcción</mat-label>
+            <input
+              matInput
+              placeholder="Ej: Participa por un premio de $1.000.000"
+              [(ngModel)]="ticketDescription"
+              (ngModelChange)="drawTicket()"
+            />
+            <mat-icon matSuffix class="material-symbols-outlined"
+              >description</mat-icon
+            >
+          </mat-form-field>
+        </div>
+        <div class="col-12 md:col-4 p-2">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Oportunidades</mat-label>
             <mat-select
@@ -16,7 +45,7 @@
           </mat-form-field>
         </div>
 
-        <div class="col-12 md:col-6 p-2">
+        <div class="col-12 md:col-4 p-2">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Cifras</mat-label>
             <mat-select
@@ -30,7 +59,7 @@
           </mat-form-field>
         </div>
 
-        <div class="col-12 md:col-6 p-2">
+        <div class="col-12 md:col-4 p-2">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Fecha Sorteo</mat-label>
             <input
@@ -48,7 +77,7 @@
           </mat-form-field>
         </div>
 
-        <div class="col-12 md:col-6 p-2">
+        <div class="col-12 md:col-4 p-2">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Número Contacto</mat-label>
             <input
@@ -57,29 +86,72 @@
               [(ngModel)]="ticketContact"
               (ngModelChange)="drawTicket()"
             />
-            <mat-icon matSuffix>phone_enabled</mat-icon>
+            <mat-icon matSuffix>add_call</mat-icon>
           </mat-form-field>
         </div>
+
+        <div class="col-12 md:col-4 p-2">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Caducidad</mat-label>
+            <input
+              matInput
+              type="number"
+              placeholder="Ej: 30"
+              [(ngModel)]="gracePeriodValue"
+              (ngModelChange)="drawTicket()"
+            />
+            <mat-icon matSuffix class="material-symbols-outlined"
+              >timer</mat-icon
+            >
+          </mat-form-field>
+        </div>
+
+        <div class="col-12 md:col-4 p-2">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Unid. tiempo</mat-label>
+            <mat-select
+              [(ngModel)]="gracePeriodUnit"
+              (ngModelChange)="drawTicket()"
+            >
+              @for (unit of graceUnits; track unit) {
+              <mat-option [value]="unit">{{ unit }}</mat-option>
+              }
+            </mat-select>
+            <mat-icon matSuffix class="material-symbols-outlined"
+              >manage_history</mat-icon
+            >
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Contenedor de botones -->
+      <div class="flex gap-3 mt-auto flex-wrap justify-content-center">
+        <button mat-fab extended (click)="includeLogo()">
+          <mat-icon class="material-symbols-outlined">filter_vintage</mat-icon>
+          Incluir logo
+        </button>
+        <button mat-fab extended (click)="openFontColorPicker()">
+          <mat-icon class="material-symbols-outlined">image</mat-icon>
+          Fondo
+        </button>
+        <button mat-fab extended (click)="openFontColorPicker()">
+          <mat-icon class="material-symbols-outlined">palette</mat-icon>
+          Color de fuente
+        </button>
+        <button mat-fab extended (click)="generateSeries()">
+          <mat-icon class="material-symbols-outlined">widget_small</mat-icon>
+          Generar Serie
+        </button>
       </div>
     </div>
 
     <div
-      class="col-12 md:col-7 p-5 flex align-items-center justify-content-center"
+      class="col-12 md:col-6 p-5 pt-1 flex align-items-center justify-content-center"
     >
-      <div class="canvas-container flex flex-column align-items-center h-full">
-        <canvas #ticketCanvas></canvas>
-
-        <!-- Contenedor de botones -->
-        <div class="flex gap-3 mt-auto flex-wrap justify-content-center">
-          <button mat-fab extended (click)="openFontColorPicker()">
-            <mat-icon class="material-symbols-outlined">palette</mat-icon>
-            Color de fuente
-          </button>
-          <button mat-fab extended (click)="generateSeries()">
-            <mat-icon class="material-symbols-outlined">widget_small</mat-icon>
-            Generar Serie
-          </button>
-        </div>
+      <div
+        class="canvas-container flex flex-column align-items-center h-full w-full"
+      >
+        <canvas #ticketCanvas class="w-full max-w-full h-auto"></canvas>
       </div>
     </div>
   </div>

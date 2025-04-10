@@ -5,6 +5,14 @@ import { ElementRef, Injectable } from '@angular/core';
 })
 export class TicketDrawingService {
   private qrImage = new Image();
+  private whatsappIcon = new Image();
+  private logoImage = new Image();
+
+  private opportunityRect: {
+    startY: number;
+    endY: number;
+  } | null = null;
+
   backgroundImage: string | null = null;
 
   readonly CM_TO_PX = 300 / 2.54;
@@ -16,11 +24,11 @@ export class TicketDrawingService {
     this.qrImage.crossOrigin = 'anonymous';
     this.qrImage.src = 'assets/images/CodigoQR.png';
 
-    /*
-    this.qrImage.onload = () => {
-      console.log('QR Image loaded');
-    };
-    */
+    this.whatsappIcon.crossOrigin = 'anonymous';
+    this.whatsappIcon.src = 'assets/whatsapp.png';
+
+    this.logoImage.crossOrigin = 'anonymous';
+    this.logoImage.src = 'assets/logo.png';
   }
 
   setupCanvas(canvas: ElementRef<HTMLCanvasElement>) {
@@ -46,47 +54,65 @@ export class TicketDrawingService {
   drawTicket(
     canvas: ElementRef<HTMLCanvasElement>,
     fontColor: string,
-    ticketDate: string, // Formato esperado: "DD/MM/YYYY"
+    ticketTitle: string,
+    ticketDescription: string,
+    ticketDate: string, // "DD/MM/YYYY"
     ticketContact: string,
-    selectedOpportunity: number,
-    selectedFigure: number
+    ticketLogo: boolean,
+    selectedOpportunity: number | null,
+    selectedFigure: number | null,
+    gracePeriodValue: number | null,
+    gracePeriodUnit: string
   ) {
+    // Si el canvas no existe, salimos sin hacer nada
     if (!canvas) return;
 
+    // Obtenemos el contexto 2D del canvas
     const context = canvas.nativeElement.getContext('2d');
+    // Si no se puede obtener el contexto, salimos
     if (!context) return;
     const ctx = context;
 
+    // Definimos dimensiones del canvas
     const width = this.CANVAS_WIDTH;
     const height = this.CANVAS_HEIGHT;
-    const margin = 25;
+    const margin = 25; // Margen alrededor del canvas
 
+    // Limpiamos todo el contenido previo del canvas
     ctx.clearRect(0, 0, width, height);
 
-    // Fondo
-    ctx.fillStyle = '#f9f6ec';
-    ctx.fillRect(0, 0, width, height);
+    // DIBUJAR FONDO DEL TICKET
+    ctx.fillStyle = '#f9f6ec'; // Color de fondo claro
+    ctx.fillRect(0, 0, width, height); // Pintamos el fondo completo
 
-    // Borde
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(margin, margin, width - 2 * margin, height - 2 * margin);
+    // DIBUJAR BORDE DEL TICKET
+    ctx.strokeStyle = '#000'; // Color del borde
+    ctx.lineWidth = 4; // Grosor del borde
+    ctx.strokeRect(margin, margin, width - 2 * margin, height - 2 * margin); // Dibujamos el rectángulo interior con margen
 
-    // QR en esquina superior derecha
-    const qrSize = 250;
-    const qrX = width - margin - qrSize;
-    const qrY = margin;
+    // DIBUJAR CÓDIGO QR EN LA ESQUINA SUPERIOR DERECHA
+    const qrSize = 250; // Tamaño del QR
+    const qrX = width - margin - qrSize; // Posición X (alineado a la derecha con margen)
+    const qrY = margin; // Posición Y (parte superior con margen)
 
+    // Verificamos si la imagen del QR ya cargó
     if (this.qrImage.complete) {
-      ctx.drawImage(this.qrImage, qrX, qrY, qrSize, qrSize);
+      ctx.drawImage(this.qrImage, qrX, qrY, qrSize, qrSize); // Si está cargada, la dibujamos
     } else {
       this.qrImage.onload = () => {
-        ctx.drawImage(this.qrImage, qrX, qrY, qrSize, qrSize);
+        ctx.drawImage(this.qrImage, qrX, qrY, qrSize, qrSize); // Si no, la dibujamos cuando cargue
       };
     }
 
-    // === FECHA DEBAJO DEL QR ===
+    // DIBUJAR BLOQUE DE FECHA
+    const posX = width - 250; // Posición horizontal absoluta
+    const posY = 295; // Posición vertical absoluta
+    const boxWidth = 200; // Ancho del recuadro
+
+    // Dividimos la fecha en día, mes y año (esperamos formato DD/MM/YYYY)
     const [day, month, year] = ticketDate.split('/');
+
+    // Array con abreviaturas de los meses
     const monthNames = [
       'ENE',
       'FEB',
@@ -101,13 +127,13 @@ export class TicketDrawingService {
       'NOV',
       'DIC',
     ];
-    const monthStr = monthNames[parseInt(month) - 1];
-    const dayStr = parseInt(day).toString().padStart(2, '0');
-    const yearStr = year;
 
-    const dateXCenter = qrX + qrSize / 2;
-    const maxDateWidth = qrSize - 20;
+    // Convertimos valores a texto
+    const monthStr = monthNames[parseInt(month) - 1]; // Mes como texto
+    const dayStr = parseInt(day).toString().padStart(2, '0'); // Día con dos dígitos
+    const yearStr = year; // Año tal cual
 
+    // FUNCIÓN PARA AJUSTAR EL TAMAÑO DE FUENTE AUTOMÁTICAMENTE SEGÚN EL ANCHO DISPONIBLE
     function adjustFontSize(
       text: string,
       initialSize: number,
@@ -116,188 +142,479 @@ export class TicketDrawingService {
       let size = initialSize;
       ctx.font = `bold ${size}px Arial`;
       while (ctx.measureText(text).width > maxWidth && size > 10) {
-        size -= 1;
+        size--;
         ctx.font = `bold ${size}px Arial`;
       }
       return size;
     }
 
-    // Tamaños un poco más grandes
+    // Calculamos tamaños óptimos para cada parte de la fecha
+    const maxDateWidth = boxWidth - 20; // Margen interno del recuadro
     const monthFontSize = adjustFontSize(monthStr, 55, maxDateWidth);
     const dayFontSize = adjustFontSize(dayStr, 100, maxDateWidth);
     const yearFontSize = adjustFontSize(yearStr, 50, maxDateWidth);
 
-    const boxX = qrX + 25;
-    const boxY = qrY + qrSize + 50;
-    const boxW = qrSize - 55;
-    const boxH = monthFontSize + dayFontSize + yearFontSize + 50;
-    const radius = 20;
+    // Calculamos la altura del recuadro en base a los textos
+    const boxHeight = monthFontSize + dayFontSize + yearFontSize + 60;
+    const radius = 20; // Radio de las esquinas redondeadas
+    const centerX = posX + boxWidth / 2; // Centro del recuadro en X
 
-    // === DIBUJAR RECUADRO CON BORDES REDONDEADOS ===
+    // === DIBUJAR EL RECUADRO DE FECHA CON ESQUINAS REDONDEADAS ===
     ctx.beginPath();
-    ctx.moveTo(boxX + radius, boxY);
-    ctx.lineTo(boxX + boxW - radius, boxY);
-    ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + radius);
-    ctx.lineTo(boxX + boxW, boxY + boxH - radius);
+    ctx.moveTo(posX + radius, posY);
+    ctx.lineTo(posX + boxWidth - radius, posY);
+    ctx.quadraticCurveTo(posX + boxWidth, posY, posX + boxWidth, posY + radius);
+    ctx.lineTo(posX + boxWidth, posY + boxHeight - radius);
     ctx.quadraticCurveTo(
-      boxX + boxW,
-      boxY + boxH,
-      boxX + boxW - radius,
-      boxY + boxH
+      posX + boxWidth,
+      posY + boxHeight,
+      posX + boxWidth - radius,
+      posY + boxHeight
     );
-    ctx.lineTo(boxX + radius, boxY + boxH);
-    ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - radius);
-    ctx.lineTo(boxX, boxY + radius);
-    ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
-    ctx.stroke();
+    ctx.lineTo(posX + radius, posY + boxHeight);
+    ctx.quadraticCurveTo(
+      posX,
+      posY + boxHeight,
+      posX,
+      posY + boxHeight - radius
+    );
+    ctx.lineTo(posX, posY + radius);
+    ctx.quadraticCurveTo(posX, posY, posX + radius, posY);
+    ctx.strokeStyle = '#000'; // Color del borde
+    ctx.lineWidth = 4; // Grosor del borde
+    ctx.stroke(); // Dibuja el contorno
 
-    // === TÍTULO ENCIMA DEL RECUADRO ===
-    ctx.font = 'bold 24px Arial';
-    ctx.fillStyle = '#000';
-    ctx.textAlign = 'center';
-    ctx.fillText('FECHA SORTEO', dateXCenter, boxY - 10);
+    // TÍTULO "FECHA SORTEO" ENCIMA DEL RECUADRO
+    ctx.font = 'bold 24px Arial'; // Estilo de fuente
+    ctx.fillStyle = '#000'; // Color de texto
+    ctx.textAlign = 'center'; // Alineado al centro
 
-    const dateStartY = qrY + qrSize + 20;
-    ctx.fillStyle = '#000';
-    ctx.textAlign = 'center';
+    ctx.fillText('FECHA SORTEO', centerX, posY - 10); // Dibujamos el título justo encima del recuadro
+
+    // DIBUJAR EL TEXTO DE LA FECHA (MES, DÍA, AÑO)
+    let y = posY + 80; // Posición vertical inicial dentro del recuadro
 
     ctx.font = `bold ${monthFontSize}px Arial`;
-    ctx.fillText(monthStr, dateXCenter, dateStartY + 100);
+    ctx.fillText(monthStr, centerX, y); // Mes en letras
+    y += monthFontSize + 35; //Posición vertical
 
     ctx.font = `bold ${dayFontSize}px Arial`;
-    ctx.fillText(dayStr, dateXCenter, dateStartY + 85 + dayFontSize + 5);
+    ctx.fillText(dayStr, centerX, y); // Día
+    y += dayFontSize - 40; // Posición vertical
 
     ctx.font = `bold ${yearFontSize}px Arial`;
-    ctx.fillText(
-      yearStr,
-      dateXCenter,
-      dateStartY + dayFontSize + 90 + yearFontSize + 5
-    );
+    ctx.fillText(yearStr, centerX, y); // Año
 
-    // === Oportunidades estilo "caras de dado" ===
-    const opportunityPlaceholder = 'X'.repeat(selectedFigure);
+    // CONTACTO CON ÍCONO DE WHATSAPP
 
-    const areaX = margin + 20;
-    const areaY = margin + 20;
-    const areaW = qrX - areaX - 20; // hasta el inicio del QR
-    const areaH = height - margin * 2 - 20;
+    // Configuración visual
+    const iconSize = 26; // Tamaño del ícono
+    const spacing = 10; // Espacio entre ícono y texto
+    const fontSize = 25; // Tamaño de la fuente del texto
 
-    const centerX = areaX + areaW / 2;
-    const centerY = areaY + areaH / 2;
+    // Posiciones absolutas
+    const contactY = height - margin - 25; // Posición vertical en el canvas
+    const contactXCenter = width - 150; // Posición horizontal central del bloque (texto + ícono)
 
-    const drawSingleOpportunity = (x: number, y: number) => {
-      ctx.font = `bold 100px Arial`;
-      ctx.fillStyle = fontColor;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'alphabetic'; // importante para usar ascent/descent
+    // Aplicar estilos al contexto
+    ctx.font = `bold ${fontSize}px Arial`; // Fuente
+    ctx.fillStyle = '#000'; // Color del texto
+    ctx.textAlign = 'center'; // Alinear el texto al centro
 
-      const metrics = ctx.measureText(opportunityPlaceholder);
-      const textHeight =
-        metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+    // Medir el ancho total del bloque (ícono + espacio + texto)
+    const textWidth = ctx.measureText(ticketContact).width;
+    const totalBlockWidth = iconSize + spacing + textWidth;
 
-      // Ajustamos Y para centrar el texto verticalmente
-      const correctedY =
-        y + metrics.actualBoundingBoxAscent - textHeight / 2 - 7;
+    // Calcular la posición inicial del ícono para que todo quede centrado
+    const iconX = contactXCenter - totalBlockWidth / 2;
+    const iconY = contactY - iconSize + 4; // Ajuste vertical fino
 
-      ctx.fillText(opportunityPlaceholder, x, correctedY);
-    };
+    // Calcular posición del texto a la derecha del ícono
+    const textX = iconX + iconSize + spacing;
 
-    const drawPositions: Record<number, () => void> = {
-      1: () => drawSingleOpportunity(centerX, centerY),
-      2: () => {
-        drawSingleOpportunity(centerX, areaY + areaH * 0.25);
-        drawSingleOpportunity(centerX, areaY + areaH * 0.75);
-      },
-      3: () => {
-        drawSingleOpportunity(centerX, areaY + areaH * 0.2);
-        drawSingleOpportunity(centerX, centerY);
-        drawSingleOpportunity(centerX, areaY + areaH * 0.8);
-      },
-      4: () => {
-        drawSingleOpportunity(areaX + areaW * 0.25, areaY + areaH * 0.25);
-        drawSingleOpportunity(areaX + areaW * 0.75, areaY + areaH * 0.25);
-        drawSingleOpportunity(areaX + areaW * 0.25, areaY + areaH * 0.75);
-        drawSingleOpportunity(areaX + areaW * 0.75, areaY + areaH * 0.75);
-      },
-      5: () => {
-        drawPositions[4]();
-        drawSingleOpportunity(centerX, centerY);
-      },
-      6: () => {
-        drawSingleOpportunity(areaX + areaW * 0.3, areaY + areaH * 0.2);
-        drawSingleOpportunity(areaX + areaW * 0.3, centerY);
-        drawSingleOpportunity(areaX + areaW * 0.3, areaY + areaH * 0.8);
-        drawSingleOpportunity(areaX + areaW * 0.7, areaY + areaH * 0.2);
-        drawSingleOpportunity(areaX + areaW * 0.7, centerY);
-        drawSingleOpportunity(areaX + areaW * 0.7, areaY + areaH * 0.8);
-      },
-    };
-
-    const draw = drawPositions[selectedOpportunity];
-    if (draw) {
-      draw();
+    // Dibujar el ícono (si ya está cargado)
+    if (this.whatsappIcon.complete) {
+      ctx.drawImage(this.whatsappIcon, iconX, iconY - 5, iconSize, iconSize);
     } else {
-      // Para más de 6 oportunidades: distribuir en grilla
-      const cols = Math.ceil(Math.sqrt(selectedOpportunity));
-      const rows = Math.ceil(selectedOpportunity / cols);
-      const spacingX = areaW / (cols + 1);
-      const spacingY = areaH / (rows + 1);
-      let count = 0;
+      this.whatsappIcon.onload = () => {
+        ctx.drawImage(this.whatsappIcon, iconX, iconY - 5, iconSize, iconSize);
+      };
+    }
 
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          if (count >= selectedOpportunity) break;
-          const x = areaX + spacingX * (c + 1);
-          const y = areaY + spacingY * (r + 1);
-          drawSingleOpportunity(x, y);
-          count++;
+    // Dibujar el texto del contacto
+    ctx.fillText(ticketContact, textX + textWidth / 2, contactY - 5);
+
+    // DIBUJAR LOGO EN POSICIÓN FIJA
+
+    // Posición absoluta en el canvas
+    const logoX = 40; // Distancia desde el borde izquierdo
+    const logoY = 40; // Distancia desde el borde superior
+    const logoSize = 180; // Tamaño del logo (ancho y alto en píxeles)
+
+    // Imagen del logo (debe estar precargada en algún momento)
+    const logoImage = this.logoImage; // <-- Asegurate de que esta imagen exista
+
+    // Dibujar el logo si corresponde
+    if (ticketLogo) {
+      if (logoImage?.complete) {
+        // Si la imagen ya cargó, se dibuja directamente
+        ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
+      } else {
+        // Si aún no cargó, se espera a que termine de cargar
+        logoImage.onload = () => {
+          ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
+        };
+      }
+    }
+
+    // TÍTULO EN LA PARTE SUPERIOR
+
+    // Tamaño de fuente para el título
+    ctx.font = `bold 60px Arial`;
+    ctx.fillStyle = '#000';
+    const titleLineHeight = 50; // Altura de línea para separar cada línea del título
+    const titleMarginTop = 120; // Margen superior absoluto desde donde empieza el título
+
+    // Coordenadas absolutas que delimitan el espacio horizontal del título
+    const titleStartX = ticketLogo ? 40 + 180 + 20 : 40; // Si hay logo, empezar más a la derecha
+    const titleEndX = width - 40 - 250 - 10; // Reservamos espacio para el QR a la derecha
+
+    // Ancho máximo disponible para el título
+    const titleMaxWidth = titleEndX - titleStartX;
+
+    // Alinear texto desde el centro para poder centrar cada línea manualmente
+    ctx.textAlign = 'center';
+
+    // FUNCIONALIDAD PARA CORTAR TEXTO EN LÍNEAS
+    const splitTitleIntoLines = (
+      text: string,
+      maxWidth: number,
+      maxLines: number
+    ): string[] => {
+      const words = text.split(' ');
+      const lines: string[] = [];
+      let currentLine = '';
+
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        const testLine = currentLine + word + ' ';
+        const testWidth = ctx.measureText(testLine).width;
+
+        if (lines.length === maxLines - 1) {
+          // Solo se permite una línea más
+          if (testWidth <= maxWidth) {
+            currentLine = testLine;
+          } else {
+            break;
+          }
+        } else if (testWidth > maxWidth) {
+          // La línea se llenó, guardar y empezar nueva
+          lines.push(currentLine.trim());
+          currentLine = word + ' ';
+        } else {
+          currentLine = testLine;
         }
       }
+
+      // Agregar última línea si no está vacía
+      if (lines.length < maxLines && currentLine.trim() !== '') {
+        lines.push(currentLine.trim());
+      }
+
+      return lines;
+    };
+
+    // Cortar el título en máximo 2 líneas según el espacio disponible
+    const titleLines = splitTitleIntoLines(ticketTitle, titleMaxWidth, 2);
+
+    // Coordenada central del bloque donde debe alinearse el texto horizontalmente
+    const titleCenterX = titleStartX + titleMaxWidth / 2;
+
+    // DIBUJAR CADA LÍNEA DEL TÍTULO
+    titleLines.forEach((line, index) => {
+      const y = titleMarginTop + index * titleLineHeight;
+      ctx.fillText(line, titleCenterX, y); // Dibujar línea centrada horizontalmente
+    });
+
+    // === DESCRIPCIÓN ===
+    const descStartX = ticketLogo ? logoX + logoSize + 20 : margin + 30; // X inicial, ajusta si hay logo
+    const descEndX = width - margin - 250 - 10; // X final, antes del QR
+
+    let descriptionFontSize = 48; // Tamaño inicial de fuente
+    let descriptionLineHeight = 45; // Espacio entre líneas
+    const descriptionMaxWidth = descEndX - descStartX; // Ancho máximo de texto
+    const descriptionStartY =
+      titleMarginTop + titleLines.length * titleLineHeight; // Y inicial, debajo del título
+
+    ctx.textAlign = 'left'; // Alineación a la izquierda
+    ctx.font = `normal ${descriptionFontSize}px Arial`; // Fuente inicial
+
+    let descriptionLines = this.wrapTextForDescription(
+      // Cortar en líneas
+      ctx,
+      ticketDescription,
+      descriptionMaxWidth,
+      descriptionFontSize
+    );
+
+    let descriptionHeight = descriptionLines.length * descriptionLineHeight; // Altura total del texto
+    const availableDescriptionHeight = 120; // Altura máxima permitida
+
+    while (
+      // Reducir fuente si no cabe
+      descriptionHeight > availableDescriptionHeight &&
+      descriptionFontSize > 20
+    ) {
+      descriptionFontSize -= 2; // Disminuir tamaño de fuente
+      descriptionLineHeight = descriptionFontSize * 0.95; // Ajustar altura de línea
+      ctx.font = `normal ${descriptionFontSize}px Arial`; // Actualizar fuente
+
+      descriptionLines = this.wrapTextForDescription(
+        // Recalcular líneas
+        ctx,
+        ticketDescription,
+        descriptionMaxWidth,
+        descriptionFontSize
+      );
+      descriptionHeight = descriptionLines.length * descriptionLineHeight; // Recalcular altura
+    }
+
+    // Dibujar líneas finales
+    ctx.font = `normal ${descriptionFontSize}px Arial`; // Asegurar fuente final
+    ctx.fillStyle = '#000'; // Color negro
+
+    descriptionLines.forEach((line: string, index: number) => {
+      const y = descriptionStartY + index * descriptionLineHeight; // Y de cada línea
+      ctx.fillText(line, descStartX, y); // Dibujar línea
+    });
+
+    if (
+      gracePeriodValue != null && // Verifica que haya valor
+      gracePeriodValue > 0 && // Y que sea mayor a 0
+      gracePeriodUnit != null && // Y que tenga unidad
+      gracePeriodUnit.trim() !== '' // Y que no esté vacía
+    ) {
+      // FORMATO DE TEXTO DE AVISO
+      const unitNormalized = gracePeriodUnit.toLowerCase().trim(); // Normaliza unidad (ej: 'Días' → 'días')
+      const singularUnits: Record<string, string> = {
+        // Diccionario para singular
+        días: 'día',
+        horas: 'hora',
+      };
+
+      const numericValue = Number(gracePeriodValue); // Asegura que sea número
+
+      const unitStr = // Usa singular si el valor es 1
+        numericValue === 1 && singularUnits[unitNormalized]
+          ? singularUnits[unitNormalized]
+          : unitNormalized;
+
+      const noticeText = `IMPORTANTE: Si la persona ganadora no se contacta en un plazo máximo de ${gracePeriodValue} ${unitStr}, no habrá lugar a la entrega del premio o compensación alguna.`; // Texto final del aviso
+
+      const noticeFontSize = 18; // Tamaño de fuente
+      const noticeLineHeight = 15; // Espaciado entre líneas
+      const noticeX = margin + 10; // Posición X del aviso
+      const noticeY = height - margin - 10; // Posición Y inicial (desde abajo)
+
+      ctx.font = `${noticeFontSize}px Arial`; // Configura fuente
+      ctx.fillStyle = '#444'; // Color gris oscuro
+      ctx.textAlign = 'left'; // Alineación izquierda
+
+      const maxNoticeWidth = width - 250 - noticeX; // Ancho máximo permitido para el texto
+
+      // CÁLCULO DE LÍNEAS NECESARIAS
+      const words = noticeText.split(' '); // Divide texto en palabras
+      let line = ''; // Línea actual
+      let lineCount = 1; // Contador de líneas
+
+      for (let i = 0; i < words.length; i++) {
+        const testLine = line + words[i] + ' '; // Simula agregar palabra
+        const testWidth = ctx.measureText(testLine).width; // Mide ancho
+
+        if (testWidth > maxNoticeWidth && i > 0) {
+          line = words[i] + ' '; // Si se pasa, nueva línea
+          lineCount++;
+        } else {
+          line = testLine; // Si no, agregar a línea actual
+        }
+      }
+
+      const adjustedNoticeY = noticeY - (lineCount - 1) * noticeLineHeight; // Reajusta Y para alinear vertical
+
+      // DIBUJAR TEXTO FINAL
+      this.wrapText(
+        ctx,
+        noticeText,
+        noticeX,
+        adjustedNoticeY,
+        maxNoticeWidth,
+        noticeLineHeight
+      );
+    }
+
+    // Si hay una figura seleccionada y una cantidad de oportunidades válida
+    if (selectedFigure != null && selectedOpportunity != null) {
+      // === REGISTRO DE POSICIONES Y ===
+
+      // Variables para almacenar la posición más baja de cada sección
+      let logoBottomY: number | null = null;
+      let titleBottomY: number | null = null;
+      let descriptionBottomY: number | null = null;
+      let showFinePrint = false; // Flag para mostrar letra menuda al final del ticket
+
+      // Si hay logo, calcular su posición inferior
+      if (ticketLogo) {
+        logoBottomY = logoY + logoSize;
+      }
+
+      // Si hay líneas de título, calcular la posición inferior del título
+      if (titleLines.length > 0) {
+        titleBottomY =
+          titleMarginTop + (titleLines.length - 1) * titleLineHeight;
+      }
+
+      // Si hay líneas de descripción, calcular su posición inferior
+      if (descriptionLines.length > 0) {
+        descriptionBottomY =
+          descriptionStartY +
+          (descriptionLines.length - 1) * descriptionLineHeight;
+      }
+
+      // Verificar si se debe mostrar letra menuda (según valor y unidad)
+      if (
+        gracePeriodValue != null &&
+        gracePeriodValue > 0 &&
+        gracePeriodUnit != null &&
+        gracePeriodUnit.trim() !== ''
+      ) {
+        showFinePrint = true;
+      }
+
+      // Agrupar los elementos cuya posición Y es válida (no null)
+      const values = [
+        { name: 'Logo', y: logoBottomY },
+        { name: 'Título', y: titleBottomY },
+        { name: 'Descripción', y: descriptionBottomY },
+      ].filter((item) => item.y !== null) as { name: string; y: number }[];
+
+      // Inicializar lowestY con el margen por defecto
+      let lowestY = margin;
+
+      // Si hay elementos válidos, obtener la posición Y más baja
+      if (values.length > 0) {
+        const lowest = values.reduce((a, b) => (a.y > b.y ? a : b));
+        lowestY = lowest.y;
+      }
+
+      // DEFINIR ÁREA PARA OPORTUNIDADES
+
+      const rectStartY = lowestY; // Inicio del rectángulo (después del último elemento)
+      const rectEndY = showFinePrint ? height - margin - 45 : height - margin; // Fin del rectángulo (antes de la letra menuda si aplica)
+      const rectHeight = rectEndY - rectStartY; // Altura del rectángulo
+      const rectWidth = width - 250 - 2 * margin; // Ancho del rectángulo (con margen aplicado)
+
+      // Guardas las coordenadas verticales del rectangulo
+      this.setOpportunityRect(rectStartY, rectEndY);
+
+      // Layouts predefinidos para 1 a 6 oportunidades
+      const layouts: Record<number, [number, number][]> = {
+        1: [[0.5, 0.5]], // Centrado
+        2: [
+          [0.5, 0.25],
+          [0.5, 0.75],
+        ], // Dos en vertical
+        3: [
+          [0.25, 0.25],
+          [0.5, 0.5],
+          [0.75, 0.75],
+        ], // Diagonal
+        4: [
+          [0.25, 0.25],
+          [0.75, 0.25],
+          [0.25, 0.75],
+          [0.75, 0.75],
+        ], // Esquinas
+        5: [
+          [0.25, 0.25],
+          [0.75, 0.25],
+          [0.5, 0.5],
+          [0.25, 0.75],
+          [0.75, 0.75],
+        ], // Esquinas + centro
+        6: [
+          [0.28, 0.25],
+          [0.72, 0.25],
+          [0.28, 0.5],
+          [0.72, 0.5],
+          [0.28, 0.75],
+          [0.72, 0.75],
+        ], // Tres pares verticales
+      };
+
+      // Generar el texto de oportunidad con cantidad de "X"
+      const opportunityText = 'X'.repeat(selectedFigure);
+
+      // Obtener layout según la cantidad de oportunidades seleccionadas
+      const layout = layouts[selectedOpportunity] || [];
+
+      // GUARDAMOS ESTADO PARA AISLAR ESTILOS
+      ctx.save();
+
+      // ESTILOS PARA LAS FIGURAS
+      ctx.font = `bold 95px Arial`; // Fuente grande en negrita
+      ctx.fillStyle = fontColor; // Color configurado para texto
+      ctx.textAlign = 'center'; // Centrado horizontal
+      ctx.textBaseline = 'middle'; // Centrado vertical
+
+      // DIBUJAR LAS OPORTUNIDADES
+      layout.forEach(([xRatio, yRatio]) => {
+        // Calcular posición absoluta en el canvas según proporción
+        const x = margin + xRatio * rectWidth;
+        const y = rectStartY + yRatio * rectHeight;
+
+        // Dibujar el texto de oportunidad en esa posición
+        ctx.fillText(opportunityText, x, y);
+      });
+
+      // RESTAURAMOS ESTADO ORIGINAL DEL CONTEXTO
+      ctx.restore(); // Evita que afecte a otros elementos fuera de este bloque
     }
   }
 
-  /**
-   * Función para dividir texto en múltiples líneas si no cabe en un ancho dado.
-   */
-  private wrapText(
+  wrapText(
     ctx: CanvasRenderingContext2D,
     text: string,
-    maxWidth: number
+    x: number,
+    y: number,
+    maxWidth: number,
+    lineHeight: number
   ) {
-    const words = text.split(/(\s+)/); // Mantiene los espacios en la separación
+    const words = text.split(' ');
     let line = '';
-    const lines: string[] = [];
-    const maxLines = 2; // Límite de líneas permitidas
-
-    for (let i = 0; i < words.length; i++) {
-      const testLine = line + words[i]; // Agregar palabra/espacio
-      const testWidth = ctx.measureText(testLine).width;
-
-      if (testWidth > maxWidth && line.trim().length > 0) {
-        lines.push(line); // No hacer trim para mantener los espacios correctamente
-        line = words[i].trimStart(); // Eliminar espacio inicial en nueva línea
-
-        if (lines.length === maxLines) {
-          //this.ticketTitle = lines.join(''); // Bloquear el exceso de texto en la UI
-          return lines;
-        }
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + ' ';
+      const metrics = ctx.measureText(testLine);
+      const testWidth = metrics.width;
+      if (testWidth > maxWidth && n > 0) {
+        ctx.fillText(line, x, y);
+        line = words[n] + ' ';
+        y += lineHeight;
       } else {
         line = testLine;
       }
     }
-
-    if (line.trim().length > 0 && lines.length < maxLines) {
-      lines.push(line);
-    }
-
-    //this.ticketTitle = lines.join(''); // Actualizar el título con solo 2 líneas
-    return lines;
+    ctx.fillText(line, x, y);
   }
 
   drawTicketWithoutQRAndOpportunities(
     ctx: CanvasRenderingContext2D,
-    ticketDate: string,
-    ticketContact: string
+    ticketTitle: string,
+    ticketDescription: string,
+    ticketDate: string, // "DD/MM/YYYY"
+    ticketContact: string,
+    ticketLogo: boolean,
+    gracePeriodValue: number | null,
+    gracePeriodUnit: string
   ) {
     if (!ctx) return;
 
@@ -307,22 +624,24 @@ export class TicketDrawingService {
 
     ctx.clearRect(0, 0, width, height);
 
-    // Fondo
-    ctx.fillStyle = '#f9f6ec';
-    ctx.fillRect(0, 0, width, height);
+    // DIBUJAR FONDO DEL TICKET
+    ctx.fillStyle = '#f9f6ec'; // Color de fondo claro
+    ctx.fillRect(0, 0, width, height); // Pintamos el fondo completo
 
-    // Borde
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(margin, margin, width - 2 * margin, height - 2 * margin);
+    // DIBUJAR BORDE DEL TICKET
+    ctx.strokeStyle = '#000'; // Color del borde
+    ctx.lineWidth = 4; // Grosor del borde
+    ctx.strokeRect(margin, margin, width - 2 * margin, height - 2 * margin); // Dibujamos el rectángulo interior con margen
 
-    // QR en esquina superior derecha
-    const qrSize = 250;
-    const qrX = width - margin - qrSize;
-    const qrY = margin;
+    // DIBUJAR BLOQUE DE FECHA
+    const posX = width - 250; // Posición horizontal absoluta
+    const posY = 295; // Posición vertical absoluta
+    const boxWidth = 200; // Ancho del recuadro
 
-    // === FECHA DEBAJO DEL QR ===
+    // Dividimos la fecha en día, mes y año (esperamos formato DD/MM/YYYY)
     const [day, month, year] = ticketDate.split('/');
+
+    // Array con abreviaturas de los meses
     const monthNames = [
       'ENE',
       'FEB',
@@ -337,13 +656,13 @@ export class TicketDrawingService {
       'NOV',
       'DIC',
     ];
-    const monthStr = monthNames[parseInt(month) - 1];
-    const dayStr = parseInt(day).toString().padStart(2, '0');
-    const yearStr = year;
 
-    const dateXCenter = qrX + qrSize / 2;
-    const maxDateWidth = qrSize - 20;
+    // Convertimos valores a texto
+    const monthStr = monthNames[parseInt(month) - 1]; // Mes como texto
+    const dayStr = parseInt(day).toString().padStart(2, '0'); // Día con dos dígitos
+    const yearStr = year; // Año tal cual
 
+    // FUNCIÓN PARA AJUSTAR EL TAMAÑO DE FUENTE AUTOMÁTICAMENTE SEGÚN EL ANCHO DISPONIBLE
     function adjustFontSize(
       text: string,
       initialSize: number,
@@ -352,69 +671,326 @@ export class TicketDrawingService {
       let size = initialSize;
       ctx.font = `bold ${size}px Arial`;
       while (ctx.measureText(text).width > maxWidth && size > 10) {
-        size -= 1;
+        size--;
         ctx.font = `bold ${size}px Arial`;
       }
       return size;
     }
 
-    // Tamaños un poco más grandes
+    // Calculamos tamaños óptimos para cada parte de la fecha
+    const maxDateWidth = boxWidth - 20; // Margen interno del recuadro
     const monthFontSize = adjustFontSize(monthStr, 55, maxDateWidth);
     const dayFontSize = adjustFontSize(dayStr, 100, maxDateWidth);
     const yearFontSize = adjustFontSize(yearStr, 50, maxDateWidth);
 
-    const boxX = qrX + 25;
-    const boxY = qrY + qrSize + 50;
-    const boxW = qrSize - 55;
-    const boxH = monthFontSize + dayFontSize + yearFontSize + 50;
-    const radius = 20;
+    // Calculamos la altura del recuadro en base a los textos
+    const boxHeight = monthFontSize + dayFontSize + yearFontSize + 60;
+    const radius = 20; // Radio de las esquinas redondeadas
+    const centerX = posX + boxWidth / 2; // Centro del recuadro en X
 
-    // === DIBUJAR RECUADRO CON BORDES REDONDEADOS ===
+    // === DIBUJAR EL RECUADRO DE FECHA CON ESQUINAS REDONDEADAS ===
     ctx.beginPath();
-    ctx.moveTo(boxX + radius, boxY);
-    ctx.lineTo(boxX + boxW - radius, boxY);
-    ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + radius);
-    ctx.lineTo(boxX + boxW, boxY + boxH - radius);
+    ctx.moveTo(posX + radius, posY);
+    ctx.lineTo(posX + boxWidth - radius, posY);
+    ctx.quadraticCurveTo(posX + boxWidth, posY, posX + boxWidth, posY + radius);
+    ctx.lineTo(posX + boxWidth, posY + boxHeight - radius);
     ctx.quadraticCurveTo(
-      boxX + boxW,
-      boxY + boxH,
-      boxX + boxW - radius,
-      boxY + boxH
+      posX + boxWidth,
+      posY + boxHeight,
+      posX + boxWidth - radius,
+      posY + boxHeight
     );
-    ctx.lineTo(boxX + radius, boxY + boxH);
-    ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - radius);
-    ctx.lineTo(boxX, boxY + radius);
-    ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
-    ctx.stroke();
+    ctx.lineTo(posX + radius, posY + boxHeight);
+    ctx.quadraticCurveTo(
+      posX,
+      posY + boxHeight,
+      posX,
+      posY + boxHeight - radius
+    );
+    ctx.lineTo(posX, posY + radius);
+    ctx.quadraticCurveTo(posX, posY, posX + radius, posY);
+    ctx.strokeStyle = '#000'; // Color del borde
+    ctx.lineWidth = 4; // Grosor del borde
+    ctx.stroke(); // Dibuja el contorno
 
-    // === TÍTULO ENCIMA DEL RECUADRO ===
-    ctx.font = 'bold 24px Arial';
-    ctx.fillStyle = '#000';
-    ctx.textAlign = 'center';
-    ctx.fillText('FECHA SORTEO', dateXCenter, boxY - 10);
+    // TÍTULO "FECHA SORTEO" ENCIMA DEL RECUADRO
+    ctx.font = 'bold 24px Arial'; // Estilo de fuente
+    ctx.fillStyle = '#000'; // Color de texto
+    ctx.textAlign = 'center'; // Alineado al centro
 
-    const dateStartY = qrY + qrSize + 20;
-    ctx.fillStyle = '#000';
-    ctx.textAlign = 'center';
+    ctx.fillText('FECHA SORTEO', centerX, posY - 10); // Dibujamos el título justo encima del recuadro
+
+    // DIBUJAR EL TEXTO DE LA FECHA (MES, DÍA, AÑO)
+    let y = posY + 80; // Posición vertical inicial dentro del recuadro
 
     ctx.font = `bold ${monthFontSize}px Arial`;
-    ctx.fillText(monthStr, dateXCenter, dateStartY + 100);
+    ctx.fillText(monthStr, centerX, y); // Mes en letras
+    y += monthFontSize + 35; //Posición vertical
 
     ctx.font = `bold ${dayFontSize}px Arial`;
-    ctx.fillText(dayStr, dateXCenter, dateStartY + 85 + dayFontSize + 5);
+    ctx.fillText(dayStr, centerX, y); // Día
+    y += dayFontSize - 40; // Posición vertical
 
     ctx.font = `bold ${yearFontSize}px Arial`;
-    ctx.fillText(
-      yearStr,
-      dateXCenter,
-      dateStartY + dayFontSize + 90 + yearFontSize + 5
+    ctx.fillText(yearStr, centerX, y); // Año
+
+    // CONTACTO CON ÍCONO DE WHATSAPP
+
+    // Configuración visual
+    const iconSize = 26; // Tamaño del ícono
+    const spacing = 10; // Espacio entre ícono y texto
+    const fontSize = 25; // Tamaño de la fuente del texto
+
+    // Posiciones absolutas
+    const contactY = height - margin - 25; // Posición vertical en el canvas
+    const contactXCenter = width - 150; // Posición horizontal central del bloque (texto + ícono)
+
+    // Aplicar estilos al contexto
+    ctx.font = `bold ${fontSize}px Arial`; // Fuente
+    ctx.fillStyle = '#000'; // Color del texto
+    ctx.textAlign = 'center'; // Alinear el texto al centro
+
+    // Medir el ancho total del bloque (ícono + espacio + texto)
+    const textWidth = ctx.measureText(ticketContact).width;
+    const totalBlockWidth = iconSize + spacing + textWidth;
+
+    // Calcular la posición inicial del ícono para que todo quede centrado
+    const iconX = contactXCenter - totalBlockWidth / 2;
+    const iconY = contactY - iconSize + 4; // Ajuste vertical fino
+
+    // Calcular posición del texto a la derecha del ícono
+    const textX = iconX + iconSize + spacing;
+
+    // Dibujar el ícono (si ya está cargado)
+    if (this.whatsappIcon.complete) {
+      ctx.drawImage(this.whatsappIcon, iconX, iconY - 5, iconSize, iconSize);
+    } else {
+      this.whatsappIcon.onload = () => {
+        ctx.drawImage(this.whatsappIcon, iconX, iconY - 5, iconSize, iconSize);
+      };
+    }
+
+    // Dibujar el texto del contacto
+    ctx.fillText(ticketContact, textX + textWidth / 2, contactY - 5);
+
+    // DIBUJAR LOGO EN POSICIÓN FIJA
+
+    // Posición absoluta en el canvas
+    const logoX = 40; // Distancia desde el borde izquierdo
+    const logoY = 40; // Distancia desde el borde superior
+    const logoSize = 180; // Tamaño del logo (ancho y alto en píxeles)
+
+    // Imagen del logo (debe estar precargada en algún momento)
+    const logoImage = this.logoImage; // <-- Asegurate de que esta imagen exista
+
+    // Dibujar el logo si corresponde
+    if (ticketLogo) {
+      if (logoImage?.complete) {
+        // Si la imagen ya cargó, se dibuja directamente
+        ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
+      } else {
+        // Si aún no cargó, se espera a que termine de cargar
+        logoImage.onload = () => {
+          ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
+        };
+      }
+    }
+
+    // TÍTULO EN LA PARTE SUPERIOR
+
+    // Tamaño de fuente para el título
+    ctx.font = `bold 60px Arial`;
+    ctx.fillStyle = '#000';
+    const titleLineHeight = 50; // Altura de línea para separar cada línea del título
+    const titleMarginTop = 120; // Margen superior absoluto desde donde empieza el título
+
+    // Coordenadas absolutas que delimitan el espacio horizontal del título
+    const titleStartX = ticketLogo ? 40 + 180 + 20 : 40; // Si hay logo, empezar más a la derecha
+    const titleEndX = width - 40 - 250 - 10; // Reservamos espacio para el QR a la derecha
+
+    // Ancho máximo disponible para el título
+    const titleMaxWidth = titleEndX - titleStartX;
+
+    // Alinear texto desde el centro para poder centrar cada línea manualmente
+    ctx.textAlign = 'center';
+
+    // FUNCIONALIDAD PARA CORTAR TEXTO EN LÍNEAS
+    const splitTitleIntoLines = (
+      text: string,
+      maxWidth: number,
+      maxLines: number
+    ): string[] => {
+      const words = text.split(' ');
+      const lines: string[] = [];
+      let currentLine = '';
+
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        const testLine = currentLine + word + ' ';
+        const testWidth = ctx.measureText(testLine).width;
+
+        if (lines.length === maxLines - 1) {
+          // Solo se permite una línea más
+          if (testWidth <= maxWidth) {
+            currentLine = testLine;
+          } else {
+            break;
+          }
+        } else if (testWidth > maxWidth) {
+          // La línea se llenó, guardar y empezar nueva
+          lines.push(currentLine.trim());
+          currentLine = word + ' ';
+        } else {
+          currentLine = testLine;
+        }
+      }
+
+      // Agregar última línea si no está vacía
+      if (lines.length < maxLines && currentLine.trim() !== '') {
+        lines.push(currentLine.trim());
+      }
+
+      return lines;
+    };
+
+    // Cortar el título en máximo 2 líneas según el espacio disponible
+    const titleLines = splitTitleIntoLines(ticketTitle, titleMaxWidth, 2);
+
+    // Coordenada central del bloque donde debe alinearse el texto horizontalmente
+    const titleCenterX = titleStartX + titleMaxWidth / 2;
+
+    // DIBUJAR CADA LÍNEA DEL TÍTULO
+    titleLines.forEach((line, index) => {
+      const y = titleMarginTop + index * titleLineHeight;
+      ctx.fillText(line, titleCenterX, y); // Dibujar línea centrada horizontalmente
+    });
+
+    // === DESCRIPCIÓN ===
+    const descStartX = ticketLogo ? logoX + logoSize + 20 : margin + 30; // X inicial, ajusta si hay logo
+    const descEndX = width - margin - 250 - 10; // X final, antes del QR
+
+    let descriptionFontSize = 48; // Tamaño inicial de fuente
+    let descriptionLineHeight = 45; // Espacio entre líneas
+    const descriptionMaxWidth = descEndX - descStartX; // Ancho máximo de texto
+    const descriptionStartY =
+      titleMarginTop + titleLines.length * titleLineHeight; // Y inicial, debajo del título
+
+    ctx.textAlign = 'left'; // Alineación a la izquierda
+    ctx.font = `normal ${descriptionFontSize}px Arial`; // Fuente inicial
+
+    let descriptionLines = this.wrapTextForDescription(
+      // Cortar en líneas
+      ctx,
+      ticketDescription,
+      descriptionMaxWidth,
+      descriptionFontSize
     );
+
+    let descriptionHeight = descriptionLines.length * descriptionLineHeight; // Altura total del texto
+    const availableDescriptionHeight = 120; // Altura máxima permitida
+
+    while (
+      // Reducir fuente si no cabe
+      descriptionHeight > availableDescriptionHeight &&
+      descriptionFontSize > 20
+    ) {
+      descriptionFontSize -= 2; // Disminuir tamaño de fuente
+      descriptionLineHeight = descriptionFontSize * 0.95; // Ajustar altura de línea
+      ctx.font = `normal ${descriptionFontSize}px Arial`; // Actualizar fuente
+
+      descriptionLines = this.wrapTextForDescription(
+        // Recalcular líneas
+        ctx,
+        ticketDescription,
+        descriptionMaxWidth,
+        descriptionFontSize
+      );
+      descriptionHeight = descriptionLines.length * descriptionLineHeight; // Recalcular altura
+    }
+
+    // Dibujar líneas finales
+    ctx.font = `normal ${descriptionFontSize}px Arial`; // Asegurar fuente final
+    ctx.fillStyle = '#000'; // Color negro
+
+    descriptionLines.forEach((line: string, index: number) => {
+      const y = descriptionStartY + index * descriptionLineHeight; // Y de cada línea
+      ctx.fillText(line, descStartX, y); // Dibujar línea
+    });
+
+    if (
+      gracePeriodValue != null && // Verifica que haya valor
+      gracePeriodValue > 0 && // Y que sea mayor a 0
+      gracePeriodUnit != null && // Y que tenga unidad
+      gracePeriodUnit.trim() !== '' // Y que no esté vacía
+    ) {
+      // FORMATO DE TEXTO DE AVISO
+      const unitNormalized = gracePeriodUnit.toLowerCase().trim(); // Normaliza unidad (ej: 'Días' → 'días')
+      const singularUnits: Record<string, string> = {
+        // Diccionario para singular
+        días: 'día',
+        horas: 'hora',
+      };
+
+      const numericValue = Number(gracePeriodValue); // Asegura que sea número
+
+      const unitStr = // Usa singular si el valor es 1
+        numericValue === 1 && singularUnits[unitNormalized]
+          ? singularUnits[unitNormalized]
+          : unitNormalized;
+
+      const noticeText = `IMPORTANTE: Si la persona ganadora no se contacta en un plazo máximo de ${gracePeriodValue} ${unitStr}, no habrá lugar a la entrega del premio o compensación alguna.`; // Texto final del aviso
+
+      const noticeFontSize = 18; // Tamaño de fuente
+      const noticeLineHeight = 15; // Espaciado entre líneas
+      const noticeX = margin + 10; // Posición X del aviso
+      const noticeY = height - margin - 10; // Posición Y inicial (desde abajo)
+
+      ctx.font = `${noticeFontSize}px Arial`; // Configura fuente
+      ctx.fillStyle = '#444'; // Color gris oscuro
+      ctx.textAlign = 'left'; // Alineación izquierda
+
+      const maxNoticeWidth = width - 250 - noticeX; // Ancho máximo permitido para el texto
+
+      // CÁLCULO DE LÍNEAS NECESARIAS
+      const words = noticeText.split(' '); // Divide texto en palabras
+      let line = ''; // Línea actual
+      let lineCount = 1; // Contador de líneas
+
+      for (let i = 0; i < words.length; i++) {
+        const testLine = line + words[i] + ' '; // Simula agregar palabra
+        const testWidth = ctx.measureText(testLine).width; // Mide ancho
+
+        if (testWidth > maxNoticeWidth && i > 0) {
+          line = words[i] + ' '; // Si se pasa, nueva línea
+          lineCount++;
+        } else {
+          line = testLine; // Si no, agregar a línea actual
+        }
+      }
+
+      const adjustedNoticeY = noticeY - (lineCount - 1) * noticeLineHeight; // Reajusta Y para alinear vertical
+
+      // DIBUJAR TEXTO FINAL
+      this.wrapText(
+        ctx,
+        noticeText,
+        noticeX,
+        adjustedNoticeY,
+        maxNoticeWidth,
+        noticeLineHeight
+      );
+    }
   }
 
   generateBackgroundImage(
     canvas: ElementRef<HTMLCanvasElement>,
-    ticketDate: string,
-    ticketContact: string
+    ticketTitle: string,
+    ticketDescription: string,
+    ticketDate: string, // "DD/MM/YYYY"
+    ticketContact: string,
+    ticketLogo: boolean,
+    gracePeriodValue: number | null,
+    gracePeriodUnit: string
   ) {
     if (!canvas) return;
 
@@ -425,12 +1001,60 @@ export class TicketDrawingService {
     ctx.save();
 
     // Dibujar el boleto sin QR y sin oportunidades
-    this.drawTicketWithoutQRAndOpportunities(ctx, ticketDate, ticketContact);
+    this.drawTicketWithoutQRAndOpportunities(
+      ctx,
+      ticketTitle,
+      ticketDescription,
+      ticketDate,
+      ticketContact,
+      ticketLogo,
+      gracePeriodValue,
+      gracePeriodUnit
+    );
 
     // Guardar la imagen de fondo
     this.backgroundImage = canvas.nativeElement.toDataURL('image/png');
 
     // Restaurar estado del canvas
     ctx.restore();
+  }
+
+  wrapTextForDescription(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    maxWidth: number,
+    fontSize: number
+  ): string[] {
+    const words = text.split(/\s+/);
+    let line = '';
+    const lines: string[] = [];
+
+    ctx.font = `normal ${fontSize}px Arial`;
+
+    for (let i = 0; i < words.length; i++) {
+      const testLine = line + words[i] + ' ';
+      const testWidth = ctx.measureText(testLine).width;
+
+      if (testWidth > maxWidth && line.trim().length > 0) {
+        lines.push(line.trim());
+        line = words[i] + ' ';
+      } else {
+        line = testLine;
+      }
+    }
+
+    if (line.trim().length > 0) {
+      lines.push(line.trim());
+    }
+
+    return lines;
+  }
+
+  private setOpportunityRect(startY: number, endY: number) {
+    this.opportunityRect = { startY, endY };
+  }
+
+  getOpportunityRect() {
+    return this.opportunityRect;
   }
 }

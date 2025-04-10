@@ -20,30 +20,44 @@ export class SeriesService {
    * Genera y guarda una serie de lotería en Firestore.
    */
   async generateAndSaveSeries(
+    ticketTitle: string,
+    ticketDescription: string,
     date: string,
     contact: string,
-    opportunities: number,
-    figures: number,
-    selectedColor: string
+    opportunities: number | null,
+    figures: number | null,
+    selectedColor: string,
+    ticketLogo: boolean,
+    gracePeriodValue: number | null,
+    gracePeriodUnit: string,
+    startRectAreaY: number,
+    endRectAreaY: number
   ): Promise<string> {
-    const totalNumbers = this.generateNumbers(figures);
+    const totalNumbers = this.generateNumbers(figures!);
     let tickets: Ticket[];
 
-    if (opportunities <= 5) {
-      tickets = this.groupNumbersIntoTickets(totalNumbers, opportunities);
+    if (opportunities! <= 5) {
+      tickets = this.groupNumbersIntoTickets(totalNumbers, opportunities!);
     } else {
-      tickets = this.generateOptimizedTickets(totalNumbers, opportunities);
+      tickets = this.generateOptimizedTickets(totalNumbers, opportunities!);
     }
 
-    this.shuffleTickets(tickets, opportunities);
+    this.shuffleTickets(tickets, opportunities!);
 
     this.series = {
       date,
+      ticketTitle,
+      ticketDescription,
       contact,
       opportunities,
       figures,
       tickets,
       selectedColor,
+      ticketLogo,
+      gracePeriodValue,
+      gracePeriodUnit,
+      startRectAreaY,
+      endRectAreaY,
     };
 
     try {

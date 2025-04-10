@@ -4,28 +4,31 @@
   } @else { @if (series()) {
 
   <div class="grid">
-    <div class="col-12 md:col-6 p-5">
+    <div class="col-12 md:col-6 p-6 pt-4">
       <h3>Detalles de la serie</h3>
       <p><strong>Identificacor:</strong> {{ series().id }}</p>
       <p><strong>Total de Boletos:</strong> {{ series().totalTickets }}</p>
       <p><strong>Boletos Impresos:</strong> {{ series().printedTickets }}</p>
 
       <h3>Detalles del boleto</h3>
-      <div class="overflow-auto max-w-full no-scrollbar" style="height: 245px">
+      <div class="overflow-auto max-w-full no-scrollbar">
         <p><strong>No. Oportunidades:</strong> {{ series().opportunities }}</p>
         <p><strong>No. Cifras:</strong> {{ series().figures }}</p>
         <p><strong>Fecha de sorteo:</strong> {{ series().date }}</p>
         <p><strong>Contacto:</strong> {{ series().contact }}</p>
       </div>
-    </div>
-    <div class="col-12 md:col-6 p-5">
-      <button mat-fab extended (click)="printNewTickets()">
-        <mat-icon class="material-symbols-outlined">print</mat-icon>
-        Imprimir Boletos
-      </button>
 
-      <h4 class="mt-3">Historial de impresión</h4>
-      <div class="overflow-auto max-w-full no-scrollbar" style="height: 350px">
+      <div class="mt-2">
+        <button mat-fab extended (click)="printNewTickets()">
+          <mat-icon class="material-symbols-outlined">print</mat-icon>
+          Imprimir Boletos
+        </button>
+      </div>
+    </div>
+
+    <div class="col-12 md:col-6 pt-4">
+      <h3>Historial de impresión</h3>
+      <div class="overflow-auto max-w-full no-scrollbar" style="height: 400px">
         <ul class="list-none p-0 m-0">
           <li
             *ngFor="let batch of printBatches"

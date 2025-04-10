@@ -13,3 +13,7 @@
     height: auto;
   }
 }
+
+.grid::-webkit-scrollbar {
+  display: none;
+}

@@ -30,13 +30,20 @@ export interface PrintBatch {
 export interface LotterySeries {
   id?: string;
   date: string;
+  ticketTitle: string;
+  ticketDescription: string;
   contact: string;
-  opportunities: number;
-  figures: number;
+  opportunities: number | null;
+  figures: number | null;
   tickets: Ticket[];
   selectedColor: string;
   totalTickets?: number;
   printedTickets?: number;
   availableTickets?: number;
+  gracePeriodValue: number | null;
+  gracePeriodUnit: string;
+  ticketLogo: boolean;
+  startRectAreaY: number;
+  endRectAreaY: number;
   createdAt?: string;
 }

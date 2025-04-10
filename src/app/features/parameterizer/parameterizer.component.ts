@@ -26,13 +26,13 @@ import { LOCALE_ID } from '@angular/core';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { FontColorPickerComponent } from '../font-color-picker/font-color-picker.component';
 
-// Registrar el idioma español para formateo de fechas
+// REGISTRA EL IDIOMA ESPAÑOL PARA FORMATEO DE FECHAS
 registerLocaleData(localeEs, 'es');
 
-// Adaptador de fecha personalizado para manejar el formato DD/MM/YYYY
+// ADAPTADOR DE FECHA PERSONALIZADO PARA FORMATO DD/MM/YYYY
 @Injectable()
 export class CustomDateAdapter extends NativeDateAdapter {
-  // Método para analizar una fecha en formato DD/MM/YYYY y convertirla a un objeto Date
+  // PARSEA UNA FECHA DESDE FORMATO DD/MM/YYYY A OBJETO Date
   override parse(value: any): Date | null {
     if (typeof value === 'string' && value.includes('/')) {
       const [day, month, year] = value.split('/').map(Number);
@@ -41,7 +41,7 @@ export class CustomDateAdapter extends NativeDateAdapter {
     return super.parse(value);
   }
 
-  // Método para formatear una fecha en el formato DD/MM/YYYY antes de mostrarla
+  // FORMATEA UNA FECHA EN FORMATO DD/MM/YYYY PARA MOSTRARLA
   override format(date: Date, displayFormat: string): string {
     if (displayFormat === 'DD/MM/YYYY') {
       const day = date.getDate().toString().padStart(2, '0');
@@ -53,7 +53,7 @@ export class CustomDateAdapter extends NativeDateAdapter {
   }
 }
 
-// Definición de formatos personalizados para el selector de fechas de Angular Material
+// FORMATOS PERSONALIZADOS PARA EL DATEPICKER DE ANGULAR MATERIAL
 export const MY_DATE_FORMATS = {
   parse: { dateInput: 'DD/MM/YYYY' },
   display: {
@@ -64,6 +64,7 @@ export const MY_DATE_FORMATS = {
   },
 };
 
+// COMPONENTE PRINCIPAL PARA CONFIGURACIÓN Y GENERACIÓN DE BOLETOS
 @Component({
   selector: 'app-parameterizer',
   standalone: true,
@@ -71,99 +72,138 @@ export const MY_DATE_FORMATS = {
   templateUrl: './parameterizer.component.html',
   styleUrl: './parameterizer.component.scss',
   providers: [
-    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' }, // Configura el idioma del datepicker
-    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS }, // Usa los formatos personalizados
-    { provide: DateAdapter, useClass: CustomDateAdapter }, // Usa el adaptador de fecha personalizado
-    { provide: LOCALE_ID, useValue: 'es' }, // Configura la localización a español
+    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' }, // Idioma del datepicker
+    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS }, // Formato de fecha
+    { provide: DateAdapter, useClass: CustomDateAdapter }, // Adaptador personalizado
+    { provide: LOCALE_ID, useValue: 'es' }, // Localización general en español
   ],
 })
 export class ParameterizerComponent implements AfterViewInit {
-  @ViewChild('loadingDialog') loadingDialog!: TemplateRef<any>;
-  @ViewChild('ticketCanvas') canvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('loadingDialog') loadingDialog!: TemplateRef<any>; // Referencia al diálogo de carga
+  @ViewChild('ticketCanvas') canvas!: ElementRef<HTMLCanvasElement>; // Referencia al canvas del boleto
 
-  // Inyección de servicios necesarios
+  // INYECCIÓN DE SERVICIOS NECESARIOS
   private ticketService = inject(SeriesService);
   private dialog = inject(MatDialog);
   private router = inject(Router);
   private ticketDrawingService = inject(TicketDrawingService);
   private bottomSheet = inject(MatBottomSheet);
 
-  // Propiedades del componente
-  backgroundImage: string | null = null;
-  opportunities = [1, 2, 3, 4, 5, 6];
-  figures = [1, 2, 3, 4, 5];
+  // PROPIEDADES DEL COMPONENTE
+  backgroundImage: string | null = null; // Imagen de fondo (actualmente no utilizada)
+  opportunities = [1, 2, 3, 4, 5, 6]; // Opciones de oportunidades disponibles
+  figures = [1, 2, 3, 4, 5]; // Figuras disponibles
+  graceUnits = ['Horas', 'Días']; // Unidades de periodo de gracia
 
-  ticketDate = this.formatDate(new Date());
+  // Campos del formulario
+  ticketTitle = '';
+  ticketDescription = '';
+  ticketDate = this.formatDate(new Date()); // Fecha en formato DD/MM/YYYY
   ticketContact = '';
-  selectedOpportunities: number = 1;
-  selectedFigures: number = 1;
+  ticketLogo: boolean = false;
+  selectedOpportunities: null = null;
+  selectedFigures: null = null;
   selectedFontColor: string = '#000000';
+  gracePeriodValue: number | null = null;
+  gracePeriodUnit: 'Días' | 'Horas' | '' = '';
 
-  // Método que se ejecuta después de que la vista ha sido inicializada
+  // Coordenadas del área de oportunidades en el boleto
+  startRectAreaY: number = 0;
+  endRectAreaY: number = 0;
+
+  // SE EJECUTA DESPUÉS DE LA INICIALIZACIÓN DE LA VISTA
   ngAfterViewInit() {
-    this.ticketDrawingService.setupCanvas(this.canvas);
-    this.drawTicket(); // Dibuja el boleto al iniciar
+    this.ticketDrawingService.setupCanvas(this.canvas); // Inicializa el canvas
+    this.drawTicket(); // Dibuja el boleto con los valores iniciales
   }
 
-  // Método para dibujar el boleto con la información actual
+  // DIBUJA EL BOLETO EN EL CANVAS USANDO LOS VALORES ACTUALES DEL FORMULARIO
   drawTicket() {
-    const formattedDate = this.formatDate(new Date(this.ticketDate)); // Asegura que la fecha esté en el formato correcto
+    const formattedDate = this.formatDate(new Date(this.ticketDate)); // Asegura formato correcto
 
     this.ticketDrawingService.drawTicket(
       this.canvas,
       this.selectedFontColor,
-      formattedDate, // Se pasa la fecha como cadena en formato DD/MM/YYYY
+      this.ticketTitle,
+      this.ticketDescription,
+      formattedDate,
       this.ticketContact,
+      this.ticketLogo,
       this.selectedOpportunities,
-      this.selectedFigures
+      this.selectedFigures,
+      this.gracePeriodValue,
+      this.gracePeriodUnit
     );
+
+    // ACTUALIZA LOS LÍMITES DEL ÁREA DE NÚMEROS SI SE DETECTA
+    const rect = this.ticketDrawingService.getOpportunityRect();
+    if (rect) {
+      this.startRectAreaY = rect.startY;
+      this.endRectAreaY = rect.endY;
+    }
   }
 
-  // Método asíncrono para generar la serie del boleto
+  // GENERA Y GUARDA UNA NUEVA SERIE EN FIRESTORE
   async generateSeries() {
     const dialogRef = this.dialog.open(this.loadingDialog, {
-      disableClose: true, // Evita que el usuario cierre el diálogo manualmente
+      disableClose: true, // Impide que el usuario cierre el diálogo
     });
 
     const formattedDate = this.formatDate(new Date(this.ticketDate));
 
     dialogRef.afterOpened().subscribe(async () => {
       try {
-        // Llamar al servicio para generar y guardar la serie en Firestore
+        // LLAMADA AL SERVICIO PARA CREAR Y GUARDAR LA SERIE
         const seriesId = await this.ticketService.generateAndSaveSeries(
+          this.ticketTitle,
+          this.ticketDescription,
           formattedDate,
           this.ticketContact,
           this.selectedOpportunities,
           this.selectedFigures,
-          this.selectedFontColor
+          this.selectedFontColor,
+          this.ticketLogo,
+          this.gracePeriodValue,
+          this.gracePeriodUnit,
+          this.startRectAreaY,
+          this.endRectAreaY
         );
 
+        // VALIDACIÓN DE RESPUESTA DEL SERVICIO
         if (!seriesId) {
           console.error('Error: No se obtuvo el ID de la serie.');
           return;
         }
 
-        this.router.navigate(['/series', seriesId]); // Redirecciona a la página de detalles de la serie
+        // NAVEGA A LA VISTA DE DETALLES DE LA SERIE GENERADA
+        this.router.navigate(['/series', seriesId]);
       } catch (error) {
         console.error('Error al generar la serie:', error);
       } finally {
-        dialogRef.close(); // Cierra el diálogo de carga
+        dialogRef.close(); // Cierra el diálogo independientemente del resultado
       }
     });
   }
 
+  // ACTIVA O DESACTIVA LA INCLUSIÓN DE LOGO EN EL BOLETO
+  includeLogo() {
+    this.ticketLogo = !this.ticketLogo;
+    this.drawTicket(); // Redibuja con el nuevo estado del logo
+  }
+
+  // ABRE EL SELECTOR DE COLOR DE FUENTE DESDE UNA BOTTOM SHEET
   openFontColorPicker() {
     const sheetRef = this.bottomSheet.open(FontColorPickerComponent);
 
     sheetRef.afterDismissed().subscribe((color: string) => {
       if (color) {
         this.selectedFontColor = color;
-        this.drawTicket(); // Redibujar con nuevo color
+        this.drawTicket(); // Redibuja el boleto con el nuevo color
       }
     });
   }
 
-  // Método para formatear una fecha en DD/MM/YYYY
+  // FORMATEA UNA FECHA AL FORMATO DD/MM/YYYY
   formatDate(date: Date): string {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
