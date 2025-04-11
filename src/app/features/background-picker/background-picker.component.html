@@ -1,0 +1,21 @@
+<h3>Selecciona un fondo</h3>
+
+<h4>Imágenes</h4>
+<div class="image-options">
+  <div
+    *ngFor="let img of backgroundImages"
+    class="image-option"
+    [ngStyle]="{ 'background-image': 'url(' + img + ')' }"
+    (click)="selectBackground(img)"
+  ></div>
+</div>
+
+<h4>Colores sólidos</h4>
+<div class="color-options">
+  <div
+    *ngFor="let color of backgroundColors"
+    class="color-option"
+    [ngStyle]="{ 'background-color': color }"
+    (click)="selectBackground(color)"
+  ></div>
+</div>

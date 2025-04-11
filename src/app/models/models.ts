@@ -37,6 +37,7 @@ export interface LotterySeries {
   figures: number | null;
   tickets: Ticket[];
   selectedColor: string;
+  ticketBackground: string;
   totalTickets?: number;
   printedTickets?: number;
   availableTickets?: number;

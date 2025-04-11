@@ -1,4 +1,4 @@
-import { Injectable, inject, NgZone } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   Auth,
   signInWithEmailAndPassword,
@@ -36,13 +36,6 @@ export class AuthService {
       if (this.authReadyResolve) {
         this.authReadyResolve();
         this.authReadyResolve = undefined;
-      }
-    });
-
-    // DETECTA CIERRE DE PESTAÑA/NAVEGADOR Y CIERRA SESIÓN
-    window.addEventListener('beforeunload', () => {
-      if (this.currentUser) {
-        signOut(this.auth);
       }
     });
   }

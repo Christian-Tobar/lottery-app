@@ -15,6 +15,7 @@ export class PdfticketService {
 
   // GENERA UNA IMAGEN DE FONDO PERSONALIZADA PARA EL BOLETO
   private async generateBackgroundImage(
+    ticketBackground: string,
     ticketTitle: string,
     ticketDescription: string,
     ticketDate: string,
@@ -35,6 +36,7 @@ export class PdfticketService {
       this.ticketDrawingService.setupCanvas(canvasRef);
       this.ticketDrawingService.generateBackgroundImage(
         canvasRef,
+        ticketBackground,
         ticketTitle,
         ticketDescription,
         ticketDate,
@@ -63,8 +65,11 @@ export class PdfticketService {
 
     // Obtener imagen de fondo desde caché, o generar una nueva si no existe
     let backgroundImage = this.backgroundCache.get(seriesId);
+
+    console.log(series);
     if (!backgroundImage) {
       backgroundImage = await this.generateBackgroundImage(
+        series.ticketBackground,
         series.ticketTitle,
         series.ticketDescription,
         series.date,

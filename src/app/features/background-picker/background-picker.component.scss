@@ -1,0 +1,17 @@
+.image-options,
+.color-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.image-option,
+.color-option {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  border: 2px solid #ccc;
+  cursor: pointer;
+  background-size: cover;
+  background-position: center;
+}

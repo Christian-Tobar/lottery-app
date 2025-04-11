@@ -51,6 +51,7 @@ export class FirestoreService {
       printedTickets: 0,
       availableTickets: series.tickets.length,
       selectedColor: series.selectedColor,
+      ticketBackground: series.ticketBackground,
       ticketLogo: series.ticketLogo,
       gracePeriodValue: series.gracePeriodValue,
       gracePeriodUnit: series.gracePeriodUnit,
@@ -110,6 +111,7 @@ export class FirestoreService {
       figures: data['figures'] || 0,
       tickets: [], // Los boletos se recuperan por separado
       selectedColor: data['selectedColor'] || '',
+      ticketBackground: data['ticketBackground'] || '',
       totalTickets: data['totalTickets'] ?? 0,
       printedTickets: data['printedTickets'] ?? 0,
       availableTickets: data['availableTickets'] ?? data['totalTickets'] ?? 0,
@@ -139,6 +141,7 @@ export class FirestoreService {
         figures: data['figures'] || 0,
         tickets: [],
         selectedColor: data['selectedColor'] || '',
+        ticketBackground: data['ticketBackground'] || '',
         totalTickets: data['totalTickets'] ?? 0,
         printedTickets: data['printedTickets'] ?? 0,
         availableTickets: data['availableTickets'] ?? data['totalTickets'] ?? 0,

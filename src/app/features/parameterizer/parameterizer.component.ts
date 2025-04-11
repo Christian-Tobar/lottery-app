@@ -25,6 +25,7 @@ import { NativeDateAdapter } from '@angular/material/core';
 import { LOCALE_ID } from '@angular/core';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { FontColorPickerComponent } from '../font-color-picker/font-color-picker.component';
+import { BackgroundPickerComponent } from '../background-picker/background-picker.component';
 
 // REGISTRA EL IDIOMA ESPAÑOL PARA FORMATEO DE FECHAS
 registerLocaleData(localeEs, 'es');
@@ -104,6 +105,7 @@ export class ParameterizerComponent implements AfterViewInit {
   selectedOpportunities: null = null;
   selectedFigures: null = null;
   selectedFontColor: string = '#000000';
+  ticketBackground: string = '';
   gracePeriodValue: number | null = null;
   gracePeriodUnit: 'Días' | 'Horas' | '' = '';
 
@@ -124,6 +126,7 @@ export class ParameterizerComponent implements AfterViewInit {
     this.ticketDrawingService.drawTicket(
       this.canvas,
       this.selectedFontColor,
+      this.ticketBackground,
       this.ticketTitle,
       this.ticketDescription,
       formattedDate,
@@ -162,6 +165,7 @@ export class ParameterizerComponent implements AfterViewInit {
           this.selectedOpportunities,
           this.selectedFigures,
           this.selectedFontColor,
+          this.ticketBackground,
           this.ticketLogo,
           this.gracePeriodValue,
           this.gracePeriodUnit,
@@ -199,6 +203,17 @@ export class ParameterizerComponent implements AfterViewInit {
       if (color) {
         this.selectedFontColor = color;
         this.drawTicket(); // Redibuja el boleto con el nuevo color
+      }
+    });
+  }
+
+  openBackgroundPicker() {
+    const sheetRef = this.bottomSheet.open(BackgroundPickerComponent);
+
+    sheetRef.afterDismissed().subscribe((background: string) => {
+      if (background) {
+        this.ticketBackground = background;
+        this.drawTicket();
       }
     });
   }

@@ -13,7 +13,11 @@ export class TicketDrawingService {
     endY: number;
   } | null = null;
 
+  // DISEÑO COMPLETO DEL FONDO
   backgroundImage: string | null = null;
+
+  // IMAGENES DE FONDO PREESTABLECIDAS
+  private backgroundImages: { [key: string]: HTMLImageElement } = {};
 
   readonly CM_TO_PX = 300 / 2.54;
   readonly CANVAS_WIDTH = Math.round(10.795 * this.CM_TO_PX);
@@ -29,6 +33,11 @@ export class TicketDrawingService {
 
     this.logoImage.crossOrigin = 'anonymous';
     this.logoImage.src = 'assets/logo.png';
+
+    this.preloadBackgroundImages([
+      'assets/images/bg1.jpg',
+      'assets/images/bg2.jpg',
+    ]);
   }
 
   setupCanvas(canvas: ElementRef<HTMLCanvasElement>) {
@@ -54,6 +63,7 @@ export class TicketDrawingService {
   drawTicket(
     canvas: ElementRef<HTMLCanvasElement>,
     fontColor: string,
+    ticketBackground: string,
     ticketTitle: string,
     ticketDescription: string,
     ticketDate: string, // "DD/MM/YYYY"
@@ -82,8 +92,23 @@ export class TicketDrawingService {
     ctx.clearRect(0, 0, width, height);
 
     // DIBUJAR FONDO DEL TICKET
-    ctx.fillStyle = '#f9f6ec'; // Color de fondo claro
-    ctx.fillRect(0, 0, width, height); // Pintamos el fondo completo
+    if (ticketBackground?.startsWith('#')) {
+      // Si es un color hexadecimal
+      ctx.fillStyle = ticketBackground;
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      // Si es una imagen (nombre/ruta)
+      const bgImage = this.backgroundImages[ticketBackground];
+      if (bgImage) {
+        if (bgImage.complete) {
+          ctx.drawImage(bgImage, 0, 0, width, height);
+        } else {
+          bgImage.onload = () => {
+            ctx.drawImage(bgImage, 0, 0, width, height);
+          };
+        }
+      }
+    }
 
     // DIBUJAR BORDE DEL TICKET
     ctx.strokeStyle = '#000'; // Color del borde
@@ -609,6 +634,7 @@ export class TicketDrawingService {
   drawTicketWithoutQRAndOpportunities(
     ctx: CanvasRenderingContext2D,
     ticketTitle: string,
+    ticketBackground: string,
     ticketDescription: string,
     ticketDate: string, // "DD/MM/YYYY"
     ticketContact: string,
@@ -625,8 +651,23 @@ export class TicketDrawingService {
     ctx.clearRect(0, 0, width, height);
 
     // DIBUJAR FONDO DEL TICKET
-    ctx.fillStyle = '#f9f6ec'; // Color de fondo claro
-    ctx.fillRect(0, 0, width, height); // Pintamos el fondo completo
+    if (ticketBackground?.startsWith('#')) {
+      // Si es un color hexadecimal
+      ctx.fillStyle = ticketBackground;
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      // Si es una imagen (nombre/ruta)
+      const bgImage = this.backgroundImages[ticketBackground];
+      if (bgImage) {
+        if (bgImage.complete) {
+          ctx.drawImage(bgImage, 0, 0, width, height);
+        } else {
+          bgImage.onload = () => {
+            ctx.drawImage(bgImage, 0, 0, width, height);
+          };
+        }
+      }
+    }
 
     // DIBUJAR BORDE DEL TICKET
     ctx.strokeStyle = '#000'; // Color del borde
@@ -984,6 +1025,7 @@ export class TicketDrawingService {
 
   generateBackgroundImage(
     canvas: ElementRef<HTMLCanvasElement>,
+    ticketBackground: string,
     ticketTitle: string,
     ticketDescription: string,
     ticketDate: string, // "DD/MM/YYYY"
@@ -1004,6 +1046,7 @@ export class TicketDrawingService {
     this.drawTicketWithoutQRAndOpportunities(
       ctx,
       ticketTitle,
+      ticketBackground,
       ticketDescription,
       ticketDate,
       ticketContact,
@@ -1048,6 +1091,15 @@ export class TicketDrawingService {
     }
 
     return lines;
+  }
+
+  preloadBackgroundImages(urls: string[]) {
+    urls.forEach((url) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = url;
+      this.backgroundImages[url] = img;
+    });
   }
 
   private setOpportunityRect(startY: number, endY: number) {
