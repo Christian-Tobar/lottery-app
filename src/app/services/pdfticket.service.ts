@@ -3,6 +3,7 @@ import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import { Buffer } from 'buffer';
 import { TicketDrawingService } from './ticket-drawing.service';
+import { FontColors } from '../models/models';
 
 @Injectable({
   providedIn: 'root',
@@ -15,6 +16,7 @@ export class PdfticketService {
 
   // GENERA UNA IMAGEN DE FONDO PERSONALIZADA PARA EL BOLETO
   private async generateBackgroundImage(
+    fontColors: FontColors,
     ticketBackground: string,
     ticketTitle: string,
     ticketDescription: string,
@@ -36,6 +38,7 @@ export class PdfticketService {
       this.ticketDrawingService.setupCanvas(canvasRef);
       this.ticketDrawingService.generateBackgroundImage(
         canvasRef,
+        fontColors,
         ticketBackground,
         ticketTitle,
         ticketDescription,
@@ -69,6 +72,7 @@ export class PdfticketService {
     console.log(series);
     if (!backgroundImage) {
       backgroundImage = await this.generateBackgroundImage(
+        series.fontColors,
         series.ticketBackground,
         series.ticketTitle,
         series.ticketDescription,
@@ -103,7 +107,7 @@ export class PdfticketService {
       // Generar código QR
       const qrImage = await QRCode.toDataURL(qrData, {
         color: {
-          dark: '#000000',
+          dark: series.fontColors.qr,
           light: '#00000000',
         },
       });
@@ -168,7 +172,7 @@ export class PdfticketService {
 
       doc.setFontSize(dynamicFontSize * fontSizeFactor);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(series.selectedColor);
+      doc.setTextColor(series.fontColors.opportunities);
 
       // FUNCIÓN PARA DIBUJAR UN NÚMERO CENTRADO
       const drawSingleNumber = (cx: number, cy: number, value: string) => {

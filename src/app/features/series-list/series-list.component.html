@@ -1,52 +1,56 @@
-<div class="page-container flex flex-column overflow-hidden">
-  <div class="pt-4 pl-5 shrink-0"><h3>Series Generadas</h3></div>
+<div class="pt-4 pl-5 shrink-0"><h3>Series Generadas</h3></div>
 
-  <!-- Loader -->
-  @if (loading) {
-  <div class="flex justify-content-center my-4 shrink-0">
-    <mat-spinner></mat-spinner>
-  </div>
-  }
+<!-- Loader -->
+@if (loading) {
+<div class="flex justify-content-center my-4 shrink-0">
+  <mat-spinner></mat-spinner>
+</div>
+}
 
-  <!-- Mensaje de error -->
-  @if (errorMessage) {
-  <div class="error-message shrink-0">
-    <mat-icon color="warn">error</mat-icon>
-    {{ errorMessage }}
-  </div>
-  }
+<!-- Mensaje de error -->
+@if (errorMessage) {
+<div class="error-message shrink-0">
+  <mat-icon color="warn">error</mat-icon>
+  {{ errorMessage }}
+</div>
+}
 
-  <!-- Grid de tarjetas scrollable -->
-  @if (seriesList.length > 0) {
-  <div
-    class="grid pl-5 pr-5 flex-grow-1 overflow-auto"
-    style="scrollbar-width: none; -ms-overflow-style: none"
-  >
-    @for (series of seriesList; track series.id) {
-    <div class="col-12 md:col-5 lg:col-4 xl:col-3">
-      <mat-card class="series-card">
-        <mat-card-header>
-          <mat-card-title>Sorteo: {{ series.date }}</mat-card-title>
-          <mat-card-subtitle
-            >Boletos impresos: {{ series.printedTickets }} de
-            {{ series.totalTickets }}</mat-card-subtitle
-          >
-        </mat-card-header>
-        <mat-card-content> </mat-card-content>
-        <mat-card-actions>
-          <button
-            mat-button
-            color="primary"
-            (click)="viewSeriesDetails(series.id)"
-          >
-            <mat-icon>visibility</mat-icon> Ver Detalles
-          </button>
-        </mat-card-actions>
-      </mat-card>
-    </div>
-    }
+<!-- Grid de tarjetas scrollable -->
+@if (seriesList.length > 0) {
+<div
+  class="grid pl-5 pr-5 flex-grow-1 overflow-auto p-0 m-0"
+  style="scrollbar-width: none; -ms-overflow-style: none"
+>
+  @for (series of seriesList; track series.id) {
+  <div class="col-12 md:col-5 lg:col-4 xl:col-3">
+    <mat-card class="series-card">
+      <mat-card-header>
+        <mat-card-title>{{ series.id }}</mat-card-title>
+        <mat-card-subtitle
+          >Boletos impresos: {{ series.printedTickets }} de
+          {{ series.totalTickets }}</mat-card-subtitle
+        >
+      </mat-card-header>
+      <img
+        class="mt-2"
+        mat-card-image
+        [src]="seriesImages[series.id]"
+        alt="Imagen de la serie"
+      />
+      <mat-card-content> </mat-card-content>
+      <mat-card-actions>
+        <button
+          mat-button
+          color="primary"
+          (click)="viewSeriesDetails(series.id)"
+        >
+          <mat-icon>visibility</mat-icon> Ver Detalles
+        </button>
+      </mat-card-actions>
+    </mat-card>
   </div>
-  } @if (seriesList.length === 0 && !loading) {
-  <p class="text-center">No hay series disponibles.</p>
   }
 </div>
+} @if (seriesList.length === 0 && !loading) {
+<p class="text-center">No hay series disponibles.</p>
+}

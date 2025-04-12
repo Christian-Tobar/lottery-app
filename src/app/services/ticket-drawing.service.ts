@@ -6,7 +6,6 @@ import QRCode from 'qrcode';
   providedIn: 'root',
 })
 export class TicketDrawingService {
-  private qrImage = new Image();
   private whatsappIcon = new Image();
   private logoImage = new Image();
 
@@ -31,9 +30,6 @@ export class TicketDrawingService {
   readonly SCALE_FACTOR = 0.4;
 
   constructor() {
-    //this.qrImage.crossOrigin = 'anonymous';
-    //this.qrImage.src = 'assets/images/CodigoQR.png';
-
     this.whatsappIcon.crossOrigin = 'anonymous';
     this.whatsappIcon.src = 'assets/whatsapp.png';
 
@@ -74,7 +70,6 @@ export class TicketDrawingService {
 
   async drawTicket(
     canvas: ElementRef<HTMLCanvasElement>,
-    fontColor: string,
     fontColors: FontColors,
     ticketBackground: string,
     ticketTitle: string,
@@ -139,6 +134,7 @@ export class TicketDrawingService {
       fontColors.qr || '#000000'
     );
     ctx.drawImage(qrCode, qrX, qrY, qrSize, qrSize);
+
     // DIBUJAR BLOQUE DE FECHA
     const posX = width - 250; // Posición horizontal absoluta
     const posY = 295; // Posición vertical absoluta
@@ -194,7 +190,7 @@ export class TicketDrawingService {
     const radius = 20; // Radio de las esquinas redondeadas
     const centerX = posX + boxWidth / 2; // Centro del recuadro en X
 
-    // === DIBUJAR EL RECUADRO DE FECHA CON ESQUINAS REDONDEADAS ===
+    // DIBUJAR EL RECUADRO DE FECHA CON ESQUINAS REDONDEADAS
     ctx.beginPath();
     ctx.moveTo(posX + radius, posY);
     ctx.lineTo(posX + boxWidth - radius, posY);
@@ -269,10 +265,26 @@ export class TicketDrawingService {
 
     // Dibujar el ícono (si ya está cargado)
     if (this.whatsappIcon.complete) {
-      ctx.drawImage(this.whatsappIcon, iconX, iconY - 5, iconSize, iconSize);
+      this.drawTintedImage(
+        ctx,
+        this.whatsappIcon,
+        iconX,
+        iconY - 5,
+        iconSize,
+        iconSize,
+        fontColors.contact
+      );
     } else {
       this.whatsappIcon.onload = () => {
-        ctx.drawImage(this.whatsappIcon, iconX, iconY - 5, iconSize, iconSize);
+        this.drawTintedImage(
+          ctx,
+          this.whatsappIcon,
+          iconX,
+          iconY - 5,
+          iconSize,
+          iconSize,
+          fontColors.contact
+        );
       };
     }
 
@@ -371,7 +383,7 @@ export class TicketDrawingService {
       ctx.fillText(line, titleCenterX, y); // Dibujar línea centrada horizontalmente
     });
 
-    // === DESCRIPCIÓN ===
+    // DESCRIPCIÓN
     const descStartX = ticketLogo ? logoX + logoSize + 20 : margin + 30; // X inicial, ajusta si hay logo
     const descEndX = width - margin - 250 - 10; // X final, antes del QR
 
@@ -381,7 +393,7 @@ export class TicketDrawingService {
     const descriptionStartY =
       titleMarginTop + titleLines.length * titleLineHeight; // Y inicial, debajo del título
 
-    ctx.textAlign = 'left'; // Alineación a la izquierda
+    ctx.textAlign = 'center'; // Alineación al centro
     ctx.font = `normal ${descriptionFontSize}px Arial`; // Fuente inicial
 
     let descriptionLines = this.wrapTextForDescription(
@@ -418,9 +430,11 @@ export class TicketDrawingService {
     ctx.font = `normal ${descriptionFontSize}px Arial`; // Asegurar fuente final
     ctx.fillStyle = fontColors.description; // Color
 
+    const descCenterX = descStartX + descriptionMaxWidth / 2;
+
     descriptionLines.forEach((line: string, index: number) => {
-      const y = descriptionStartY + index * descriptionLineHeight; // Y de cada línea
-      ctx.fillText(line, descStartX, y); // Dibujar línea
+      const y = descriptionStartY + index * descriptionLineHeight;
+      ctx.fillText(line, descCenterX, y); // <-- centrado en el espacio horizontal disponible
     });
 
     if (
@@ -489,8 +503,7 @@ export class TicketDrawingService {
 
     // Si hay una figura seleccionada y una cantidad de oportunidades válida
     if (selectedFigure != null && selectedOpportunity != null) {
-      // === REGISTRO DE POSICIONES Y ===
-
+      // REGISTRO DE POSICIONES Y
       // Variables para almacenar la posición más baja de cada sección
       let logoBottomY: number | null = null;
       let titleBottomY: number | null = null;
@@ -643,6 +656,7 @@ export class TicketDrawingService {
 
   drawTicketWithoutQRAndOpportunities(
     ctx: CanvasRenderingContext2D,
+    fontColors: FontColors,
     ticketTitle: string,
     ticketBackground: string,
     ticketDescription: string,
@@ -680,7 +694,7 @@ export class TicketDrawingService {
     }
 
     // DIBUJAR BORDE DEL TICKET
-    ctx.strokeStyle = '#000'; // Color del borde
+    ctx.strokeStyle = fontColors.border; // Color del borde
     ctx.lineWidth = 4; // Grosor del borde
     ctx.strokeRect(margin, margin, width - 2 * margin, height - 2 * margin); // Dibujamos el rectángulo interior con margen
 
@@ -760,13 +774,13 @@ export class TicketDrawingService {
     );
     ctx.lineTo(posX, posY + radius);
     ctx.quadraticCurveTo(posX, posY, posX + radius, posY);
-    ctx.strokeStyle = '#000'; // Color del borde
+    ctx.strokeStyle = fontColors.date; // Color del borde
     ctx.lineWidth = 4; // Grosor del borde
     ctx.stroke(); // Dibuja el contorno
 
     // TÍTULO "FECHA SORTEO" ENCIMA DEL RECUADRO
     ctx.font = 'bold 24px Arial'; // Estilo de fuente
-    ctx.fillStyle = '#000'; // Color de texto
+    ctx.fillStyle = fontColors.date; // Color de texto
     ctx.textAlign = 'center'; // Alineado al centro
 
     ctx.fillText('FECHA SORTEO', centerX, posY - 10); // Dibujamos el título justo encima del recuadro
@@ -798,7 +812,7 @@ export class TicketDrawingService {
 
     // Aplicar estilos al contexto
     ctx.font = `bold ${fontSize}px Arial`; // Fuente
-    ctx.fillStyle = '#000'; // Color del texto
+    ctx.fillStyle = fontColors.contact; // Color del texto
     ctx.textAlign = 'center'; // Alinear el texto al centro
 
     // Medir el ancho total del bloque (ícono + espacio + texto)
@@ -814,10 +828,26 @@ export class TicketDrawingService {
 
     // Dibujar el ícono (si ya está cargado)
     if (this.whatsappIcon.complete) {
-      ctx.drawImage(this.whatsappIcon, iconX, iconY - 5, iconSize, iconSize);
+      this.drawTintedImage(
+        ctx,
+        this.whatsappIcon,
+        iconX,
+        iconY - 5,
+        iconSize,
+        iconSize,
+        fontColors.contact
+      );
     } else {
       this.whatsappIcon.onload = () => {
-        ctx.drawImage(this.whatsappIcon, iconX, iconY - 5, iconSize, iconSize);
+        this.drawTintedImage(
+          ctx,
+          this.whatsappIcon,
+          iconX,
+          iconY - 5,
+          iconSize,
+          iconSize,
+          fontColors.contact
+        );
       };
     }
 
@@ -851,7 +881,7 @@ export class TicketDrawingService {
 
     // Tamaño de fuente para el título
     ctx.font = `bold 60px Arial`;
-    ctx.fillStyle = '#000';
+    ctx.fillStyle = fontColors.title;
     const titleLineHeight = 50; // Altura de línea para separar cada línea del título
     const titleMarginTop = 120; // Margen superior absoluto desde donde empieza el título
 
@@ -926,7 +956,7 @@ export class TicketDrawingService {
     const descriptionStartY =
       titleMarginTop + titleLines.length * titleLineHeight; // Y inicial, debajo del título
 
-    ctx.textAlign = 'left'; // Alineación a la izquierda
+    ctx.textAlign = 'center'; // Alineación al centro
     ctx.font = `normal ${descriptionFontSize}px Arial`; // Fuente inicial
 
     let descriptionLines = this.wrapTextForDescription(
@@ -961,11 +991,13 @@ export class TicketDrawingService {
 
     // Dibujar líneas finales
     ctx.font = `normal ${descriptionFontSize}px Arial`; // Asegurar fuente final
-    ctx.fillStyle = '#000'; // Color negro
+    ctx.fillStyle = fontColors.description; // Color
+
+    const descCenterX = descStartX + descriptionMaxWidth / 2;
 
     descriptionLines.forEach((line: string, index: number) => {
-      const y = descriptionStartY + index * descriptionLineHeight; // Y de cada línea
-      ctx.fillText(line, descStartX, y); // Dibujar línea
+      const y = descriptionStartY + index * descriptionLineHeight;
+      ctx.fillText(line, descCenterX, y); // <-- centrado en el espacio horizontal disponible
     });
 
     if (
@@ -997,7 +1029,7 @@ export class TicketDrawingService {
       const noticeY = height - margin - 10; // Posición Y inicial (desde abajo)
 
       ctx.font = `${noticeFontSize}px Arial`; // Configura fuente
-      ctx.fillStyle = '#444'; // Color gris oscuro
+      ctx.fillStyle = fontColors.clause; // Color
       ctx.textAlign = 'left'; // Alineación izquierda
 
       const maxNoticeWidth = width - 250 - noticeX; // Ancho máximo permitido para el texto
@@ -1035,6 +1067,7 @@ export class TicketDrawingService {
 
   generateBackgroundImage(
     canvas: ElementRef<HTMLCanvasElement>,
+    fontColors: FontColors,
     ticketBackground: string,
     ticketTitle: string,
     ticketDescription: string,
@@ -1055,6 +1088,7 @@ export class TicketDrawingService {
     // Dibujar el boleto sin QR y sin oportunidades
     this.drawTicketWithoutQRAndOpportunities(
       ctx,
+      fontColors,
       ticketTitle,
       ticketBackground,
       ticketDescription,
@@ -1145,6 +1179,47 @@ export class TicketDrawingService {
     this.cachedQRColor = color;
 
     return img;
+  }
+
+  drawTintedImage(
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    color: string
+  ) {
+    // 1. Dibujar la imagen en un canvas auxiliar
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    const tempCtx = tempCanvas.getContext('2d')!;
+    tempCtx.drawImage(img, 0, 0, width, height);
+
+    // 2. Extraer los píxeles de la imagen
+    const imageData = tempCtx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    // 3. Convertir color hex a RGB
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
+
+    // 4. Reemplazar color manteniendo la transparencia
+    for (let i = 0; i < data.length; i += 4) {
+      const alpha = data[i + 3];
+      if (alpha > 0) {
+        data[i] = r;
+        data[i + 1] = g;
+        data[i + 2] = b;
+      }
+    }
+
+    tempCtx.putImageData(imageData, 0, 0);
+
+    // 5. Dibujar la imagen teñida en el canvas original
+    ctx.drawImage(tempCanvas, x, y, width, height);
   }
 
   private setOpportunityRect(startY: number, endY: number) {

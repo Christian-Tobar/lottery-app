@@ -128,7 +128,7 @@ export class ParameterizerComponent implements AfterViewInit {
   ticketLogo: boolean = false;
   selectedOpportunities: null = null;
   selectedFigures: null = null;
-  selectedFontColor: string = '#000000';
+
   ticketBackground: string = '';
   gracePeriodValue: number | null = null;
   gracePeriodUnit: 'Días' | 'Horas' | '' = '';
@@ -153,7 +153,6 @@ export class ParameterizerComponent implements AfterViewInit {
 
     this.ticketDrawingService.drawTicket(
       this.canvas,
-      this.selectedFontColor,
       this.fontColors,
       this.ticketBackground,
       this.ticketTitle,
@@ -193,7 +192,7 @@ export class ParameterizerComponent implements AfterViewInit {
           this.ticketContact,
           this.selectedOpportunities,
           this.selectedFigures,
-          this.selectedFontColor,
+          this.fontColors,
           this.ticketBackground,
           this.ticketLogo,
           this.gracePeriodValue,

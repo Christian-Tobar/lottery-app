@@ -1,15 +1,28 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef } from '@angular/core';
 import { FirestoreService } from '../../services/firestore.service';
 import { Router } from '@angular/router';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { MATERIAL_COMPONENTS } from '../../core/material.components';
+import { TicketDrawingService } from '../../services/ticket-drawing.service';
+import { FontColors } from '../../models/models';
 
 interface Series {
   id: string;
-  createdAt: string;
   date: string;
-  printedTickets: number;
-  totalTickets: number;
+  ticketTitle: string;
+  ticketDescription: string;
+  contact: string;
+  opportunities: number | null;
+  figures: number | null;
+  fontColors: FontColors;
+  ticketBackground: string;
+  totalTickets: number | undefined;
+  printedTickets: number | undefined;
+  availableTickets: number | undefined;
+  gracePeriodValue: number | null;
+  gracePeriodUnit: string;
+  ticketLogo: boolean;
+  createdAt: string;
 }
 
 @Component({
@@ -23,10 +36,12 @@ export class SeriesListComponent {
   seriesList: Series[] = [];
   loading: boolean = true;
   errorMessage: string | null = null;
+  seriesImages: { [id: string]: string } = {};
 
   constructor(
     private firestoreService: FirestoreService,
-    private router: Router
+    private router: Router,
+    private ticketDrawingService: TicketDrawingService
   ) {}
 
   ngOnInit(): void {
@@ -37,27 +52,74 @@ export class SeriesListComponent {
     try {
       const seriesData = await this.firestoreService.getAllSeries();
 
-      // Ordenar por fecha de creación de la más reciente a la más antigua
       this.seriesList = seriesData
-        .filter((series) => series.createdAt) // Filtramos las series con fecha válida
+        .filter((series) => series.createdAt)
         .sort(
           (a, b) =>
             new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
-        ) // Ordenamos por createdAt
-
+        )
         .map((series) => ({
           id: series.id ?? '',
-          createdAt: series.createdAt ?? '',
           date: series.date,
-          printedTickets: series.printedTickets ?? 0,
-          totalTickets: series.totalTickets ?? 0,
+          ticketTitle: series.ticketTitle,
+          ticketDescription: series.ticketDescription,
+          contact: series.contact,
+          opportunities: series.opportunities,
+          figures: series.figures,
+          fontColors: series.fontColors,
+          ticketBackground: series.ticketBackground,
+          totalTickets: series.totalTickets,
+          printedTickets: series.printedTickets,
+          availableTickets: series.availableTickets,
+          gracePeriodValue: series.gracePeriodValue,
+          gracePeriodUnit: series.gracePeriodUnit,
+          ticketLogo: series.ticketLogo,
+          createdAt: series.createdAt ?? '',
         }));
+
+      // Generar una imagen por cada serie
+      for (const series of this.seriesList) {
+        await this.generateTicketImage(series);
+      }
     } catch (error) {
       this.errorMessage = 'Error al cargar las series';
       console.error(error);
     } finally {
       this.loading = false;
     }
+  }
+
+  async generateTicketImage(series: Series) {
+    // Crear un canvas fuera de la vista
+    const canvas = document.createElement('canvas');
+    const canvasRef = {
+      nativeElement: canvas,
+    } as ElementRef<HTMLCanvasElement>;
+
+    // Preparar el canvas
+    this.ticketDrawingService.setupCanvas(canvasRef);
+
+    // Dibujar el ticket
+    await this.ticketDrawingService.drawTicket(
+      canvasRef,
+      series.fontColors,
+      series.ticketBackground,
+      series.ticketTitle,
+      series.ticketDescription,
+      series.date,
+      series.contact,
+      series.ticketLogo,
+      series.opportunities,
+      series.figures,
+      series.gracePeriodValue,
+      series.gracePeriodUnit
+    );
+
+    // Obtener imagen como base64
+    const imageUrl = canvas.toDataURL('image/png');
+
+    // Guardarla por ID de serie
+    this.seriesImages[series.id] = imageUrl;
   }
 
   viewSeriesDetails(seriesId: string) {

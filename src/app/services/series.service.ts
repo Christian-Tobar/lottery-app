@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { FirestoreService } from './firestore.service';
-import { LotterySeries } from '../models/models';
+import { FontColors, LotterySeries } from '../models/models';
 
 interface Ticket {
   id: string;
@@ -26,7 +26,7 @@ export class SeriesService {
     contact: string,
     opportunities: number | null,
     figures: number | null,
-    selectedColor: string,
+    fontColors: FontColors,
     ticketBackground: string,
     ticketLogo: boolean,
     gracePeriodValue: number | null,
@@ -53,7 +53,7 @@ export class SeriesService {
       opportunities,
       figures,
       tickets,
-      selectedColor,
+      fontColors,
       ticketBackground,
       ticketLogo,
       gracePeriodValue,
