@@ -1,4 +1,6 @@
 import { ElementRef, Injectable } from '@angular/core';
+import { FontColors } from '../models/models';
+import QRCode from 'qrcode';
 
 @Injectable({
   providedIn: 'root',
@@ -7,6 +9,10 @@ export class TicketDrawingService {
   private qrImage = new Image();
   private whatsappIcon = new Image();
   private logoImage = new Image();
+
+  private cachedQRCode: HTMLImageElement | null = null;
+  private cachedQRData: string | null = null;
+  private cachedQRColor: string | null = null;
 
   private opportunityRect: {
     startY: number;
@@ -25,8 +31,8 @@ export class TicketDrawingService {
   readonly SCALE_FACTOR = 0.4;
 
   constructor() {
-    this.qrImage.crossOrigin = 'anonymous';
-    this.qrImage.src = 'assets/images/CodigoQR.png';
+    //this.qrImage.crossOrigin = 'anonymous';
+    //this.qrImage.src = 'assets/images/CodigoQR.png';
 
     this.whatsappIcon.crossOrigin = 'anonymous';
     this.whatsappIcon.src = 'assets/whatsapp.png';
@@ -37,6 +43,12 @@ export class TicketDrawingService {
     this.preloadBackgroundImages([
       'assets/images/bg1.jpg',
       'assets/images/bg2.jpg',
+      'assets/images/bg3.jpg',
+      'assets/images/bg4.jpg',
+      'assets/images/bg5.jpg',
+      'assets/images/bg6.jpg',
+      'assets/images/bg7.jpg',
+      'assets/images/bg8.jpg',
     ]);
   }
 
@@ -60,9 +72,10 @@ export class TicketDrawingService {
     }
   }
 
-  drawTicket(
+  async drawTicket(
     canvas: ElementRef<HTMLCanvasElement>,
     fontColor: string,
+    fontColors: FontColors,
     ticketBackground: string,
     ticketTitle: string,
     ticketDescription: string,
@@ -111,7 +124,7 @@ export class TicketDrawingService {
     }
 
     // DIBUJAR BORDE DEL TICKET
-    ctx.strokeStyle = '#000'; // Color del borde
+    ctx.strokeStyle = fontColors.border; // Color del borde
     ctx.lineWidth = 4; // Grosor del borde
     ctx.strokeRect(margin, margin, width - 2 * margin, height - 2 * margin); // Dibujamos el rectángulo interior con margen
 
@@ -120,15 +133,12 @@ export class TicketDrawingService {
     const qrX = width - margin - qrSize; // Posición X (alineado a la derecha con margen)
     const qrY = margin; // Posición Y (parte superior con margen)
 
-    // Verificamos si la imagen del QR ya cargó
-    if (this.qrImage.complete) {
-      ctx.drawImage(this.qrImage, qrX, qrY, qrSize, qrSize); // Si está cargada, la dibujamos
-    } else {
-      this.qrImage.onload = () => {
-        ctx.drawImage(this.qrImage, qrX, qrY, qrSize, qrSize); // Si no, la dibujamos cuando cargue
-      };
-    }
-
+    // Usar el caché de QR generado
+    const qrCode = await this.generateQRCode(
+      'Codigo QR de ejemplo', // Aquí usas el contenido del QR, por ejemplo, `ticketContact`
+      fontColors.qr || '#000000'
+    );
+    ctx.drawImage(qrCode, qrX, qrY, qrSize, qrSize);
     // DIBUJAR BLOQUE DE FECHA
     const posX = width - 250; // Posición horizontal absoluta
     const posY = 295; // Posición vertical absoluta
@@ -205,13 +215,13 @@ export class TicketDrawingService {
     );
     ctx.lineTo(posX, posY + radius);
     ctx.quadraticCurveTo(posX, posY, posX + radius, posY);
-    ctx.strokeStyle = '#000'; // Color del borde
+    ctx.strokeStyle = fontColors.date; // Color del borde
     ctx.lineWidth = 4; // Grosor del borde
     ctx.stroke(); // Dibuja el contorno
 
     // TÍTULO "FECHA SORTEO" ENCIMA DEL RECUADRO
     ctx.font = 'bold 24px Arial'; // Estilo de fuente
-    ctx.fillStyle = '#000'; // Color de texto
+    ctx.fillStyle = fontColors.date; // Color de texto
     ctx.textAlign = 'center'; // Alineado al centro
 
     ctx.fillText('FECHA SORTEO', centerX, posY - 10); // Dibujamos el título justo encima del recuadro
@@ -243,7 +253,7 @@ export class TicketDrawingService {
 
     // Aplicar estilos al contexto
     ctx.font = `bold ${fontSize}px Arial`; // Fuente
-    ctx.fillStyle = '#000'; // Color del texto
+    ctx.fillStyle = fontColors.contact; // Color del texto
     ctx.textAlign = 'center'; // Alinear el texto al centro
 
     // Medir el ancho total del bloque (ícono + espacio + texto)
@@ -296,7 +306,7 @@ export class TicketDrawingService {
 
     // Tamaño de fuente para el título
     ctx.font = `bold 60px Arial`;
-    ctx.fillStyle = '#000';
+    ctx.fillStyle = fontColors.title;
     const titleLineHeight = 50; // Altura de línea para separar cada línea del título
     const titleMarginTop = 120; // Margen superior absoluto desde donde empieza el título
 
@@ -406,7 +416,7 @@ export class TicketDrawingService {
 
     // Dibujar líneas finales
     ctx.font = `normal ${descriptionFontSize}px Arial`; // Asegurar fuente final
-    ctx.fillStyle = '#000'; // Color negro
+    ctx.fillStyle = fontColors.description; // Color
 
     descriptionLines.forEach((line: string, index: number) => {
       const y = descriptionStartY + index * descriptionLineHeight; // Y de cada línea
@@ -442,7 +452,7 @@ export class TicketDrawingService {
       const noticeY = height - margin - 10; // Posición Y inicial (desde abajo)
 
       ctx.font = `${noticeFontSize}px Arial`; // Configura fuente
-      ctx.fillStyle = '#444'; // Color gris oscuro
+      ctx.fillStyle = fontColors.clause; // Color
       ctx.textAlign = 'left'; // Alineación izquierda
 
       const maxNoticeWidth = width - 250 - noticeX; // Ancho máximo permitido para el texto
@@ -587,7 +597,7 @@ export class TicketDrawingService {
 
       // ESTILOS PARA LAS FIGURAS
       ctx.font = `bold 95px Arial`; // Fuente grande en negrita
-      ctx.fillStyle = fontColor; // Color configurado para texto
+      ctx.fillStyle = fontColors.opportunities; // Color configurado para texto
       ctx.textAlign = 'center'; // Centrado horizontal
       ctx.textBaseline = 'middle'; // Centrado vertical
 
@@ -1100,6 +1110,41 @@ export class TicketDrawingService {
       img.src = url;
       this.backgroundImages[url] = img;
     });
+  }
+
+  private async generateQRCode(
+    data: string,
+    color: string
+  ): Promise<HTMLImageElement> {
+    // Verificar si el QR ya ha sido generado con los mismos parámetros
+    if (
+      this.cachedQRCode &&
+      this.cachedQRData === data &&
+      this.cachedQRColor === color
+    ) {
+      return this.cachedQRCode; // Usar el QR caché
+    }
+
+    // Si no existe el caché, generamos un nuevo QR
+    const qrDataUrl = await QRCode.toDataURL(data, {
+      margin: 3,
+      width: 250,
+      color: {
+        dark: color,
+        light: '#ffffff00', // fondo transparente
+      },
+    });
+
+    const img = new Image();
+    img.src = qrDataUrl;
+    await new Promise((resolve) => (img.onload = resolve));
+
+    // Actualizar el caché
+    this.cachedQRCode = img;
+    this.cachedQRData = data;
+    this.cachedQRColor = color;
+
+    return img;
   }
 
   private setOpportunityRect(startY: number, endY: number) {

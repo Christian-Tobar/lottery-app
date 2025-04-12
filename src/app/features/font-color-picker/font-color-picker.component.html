@@ -1,16 +1,25 @@
 <div class="p-4">
+  <h3 class="mb-2">¿Qué parte quieres personalizar?</h3>
+  <mat-form-field appearance="fill" class="w-full mb-4">
+    <mat-label>Sección del boleto</mat-label>
+    <mat-select [(ngModel)]="selectedSection">
+      @for (section of sections; track $index) {
+      <mat-option [value]="section.value">{{ section.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
   <h3 class="mb-2">Selecciona un color</h3>
-  <div class="color-grid">
+  <div class="color-options">
     @for (color of colors; track $index) {
     <button
       mat-mini-fab
-      [ngStyle]="{
-        'background-color': color
-      }"
-      class="color-btn"
+      [ngStyle]="{ 'background-color': color }"
+      class="color-option"
       (click)="selectColor(color)"
       [title]="color"
     ></button>
+
     }
   </div>
 </div>

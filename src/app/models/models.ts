@@ -48,3 +48,14 @@ export interface LotterySeries {
   endRectAreaY: number;
   createdAt?: string;
 }
+
+export interface FontColors {
+  title: string;
+  description: string;
+  border: string;
+  clause: string;
+  opportunities: string;
+  date: string;
+  contact: string;
+  qr: string;
+}

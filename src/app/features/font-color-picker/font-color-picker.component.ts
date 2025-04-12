@@ -2,16 +2,30 @@ import { Component, inject } from '@angular/core';
 import { MATERIAL_COMPONENTS } from '../../core/material.components';
 import { MatBottomSheetRef } from '@angular/material/bottom-sheet';
 import { NgStyle } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-font-color-picker',
   standalone: true,
-  imports: [MATERIAL_COMPONENTS, NgStyle],
+  imports: [MATERIAL_COMPONENTS, NgStyle, FormsModule],
   templateUrl: './font-color-picker.component.html',
   styleUrl: './font-color-picker.component.scss',
 })
 export class FontColorPickerComponent {
   private bottomSheetRef = inject(MatBottomSheetRef<FontColorPickerComponent>);
+  selectedSection: string | null = null;
+
+  // Secciones disponibles
+  sections = [
+    { label: 'Título', value: 'title' },
+    { label: 'Descripción', value: 'description' },
+    { label: 'Cláusula', value: 'clause' },
+    { label: 'Oportunidades', value: 'opportunities' },
+    { label: 'Fecha', value: 'date' },
+    { label: 'Contacto', value: 'contact' },
+    { label: 'Código QR', value: 'qr' },
+    { label: 'Borde', value: 'border' },
+  ];
 
   colors = [
     // Pomegranate
@@ -258,6 +272,13 @@ export class FontColorPickerComponent {
   ];
 
   selectColor(color: string) {
-    this.bottomSheetRef.dismiss(color); // Devolver el color al cerrar
+    if (this.selectedSection) {
+      this.bottomSheetRef.dismiss({
+        element: this.selectedSection,
+        color,
+      });
+    } else {
+      alert('Por favor selecciona una sección primero.');
+    }
   }
 }

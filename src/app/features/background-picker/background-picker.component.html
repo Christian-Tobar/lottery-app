@@ -1,21 +1,23 @@
-<h3>Selecciona un fondo</h3>
+<div class="m-4">
+  <h4>Selecciona un fondo</h4>
 
-<h4>Imágenes</h4>
-<div class="image-options">
-  <div
-    *ngFor="let img of backgroundImages"
-    class="image-option"
-    [ngStyle]="{ 'background-image': 'url(' + img + ')' }"
-    (click)="selectBackground(img)"
-  ></div>
-</div>
+  <h5>Imágenes</h5>
+  <div class="image-options">
+    <div
+      *ngFor="let thumb of data.thumbnails; let i = index"
+      class="image-option"
+      [ngStyle]="{ 'background-image': 'url(' + thumb + ')' }"
+      (click)="selectBackground(data.originals[i])"
+    ></div>
+  </div>
 
-<h4>Colores sólidos</h4>
-<div class="color-options">
-  <div
-    *ngFor="let color of backgroundColors"
-    class="color-option"
-    [ngStyle]="{ 'background-color': color }"
-    (click)="selectBackground(color)"
-  ></div>
+  <h5>Colores sólidos</h5>
+  <div class="color-options">
+    <div
+      *ngFor="let color of backgroundColors"
+      class="color-option"
+      [ngStyle]="{ 'background-color': color }"
+      (click)="selectBackground(color)"
+    ></div>
+  </div>
 </div>

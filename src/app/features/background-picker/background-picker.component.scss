@@ -1,8 +1,9 @@
 .image-options,
 .color-options {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
   gap: 0.5rem;
+  max-width: calc(60px * 10 + 0.5rem * 9); /* máximo 10 columnas */
 }
 
 .image-option,
@@ -14,4 +15,16 @@
   cursor: pointer;
   background-size: cover;
   background-position: center;
+}
+
+::ng-deep .mat-bottom-sheet-container {
+  max-height: 80vh;
+  overflow-y: auto !important;
+
+  // Oculta la barra de scroll
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+::ng-deep .mat-bottom-sheet-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
 }

@@ -9,3 +9,15 @@ body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
 }
+
+::ng-deep .mat-bottom-sheet-container {
+  max-height: 80vh;
+  overflow-y: auto !important;
+
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+::ng-deep .mat-bottom-sheet-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}

@@ -1,24 +1,27 @@
-.color-grid {
+.color-options {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-  gap: 8px;
-
-  max-height: 300px; // ajusta este valor si es necesario
-  overflow-y: auto; // mantiene scroll vertical funcional
-  scrollbar-width: none; // Firefox
-  -ms-overflow-style: none; // IE 10+
-
-  &::-webkit-scrollbar {
-    // Chrome, Safari
-    display: none;
-  }
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+  gap: 0.5rem;
+  max-width: calc(60px * 10 + 0.5rem * 9); // máximo 10 columnas
 }
 
-.color-btn {
-  width: 36px;
-  height: 36px;
-  min-width: 36px !important;
+.color-option {
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  border: 1px solid #ccc;
-  box-shadow: none !important; // 👈 Quita la sombra
+  border: 2px solid #ccc;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+
+::ng-deep .mat-bottom-sheet-container {
+  max-height: 80vh;
+  overflow-y: auto !important;
+
+  // Oculta la barra de scroll
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+::ng-deep .mat-bottom-sheet-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
 }

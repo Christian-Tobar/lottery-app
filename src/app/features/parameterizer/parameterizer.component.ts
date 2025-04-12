@@ -26,6 +26,7 @@ import { LOCALE_ID } from '@angular/core';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { FontColorPickerComponent } from '../font-color-picker/font-color-picker.component';
 import { BackgroundPickerComponent } from '../background-picker/background-picker.component';
+import { FontColors } from '../../models/models';
 
 // REGISTRA EL IDIOMA ESPAÑOL PARA FORMATEO DE FECHAS
 registerLocaleData(localeEs, 'es');
@@ -95,6 +96,29 @@ export class ParameterizerComponent implements AfterViewInit {
   opportunities = [1, 2, 3, 4, 5, 6]; // Opciones de oportunidades disponibles
   figures = [1, 2, 3, 4, 5]; // Figuras disponibles
   graceUnits = ['Horas', 'Días']; // Unidades de periodo de gracia
+  sectionFontColors: { [key: string]: string } = {};
+  thumbnails: string[] = [];
+  originalBackgroundImages: string[] = [
+    'assets/images/bg1.jpg',
+    'assets/images/bg2.jpg',
+    'assets/images/bg3.jpg',
+    'assets/images/bg4.jpg',
+    'assets/images/bg5.jpg',
+    'assets/images/bg6.jpg',
+    'assets/images/bg7.jpg',
+    'assets/images/bg8.jpg',
+  ];
+
+  fontColors: FontColors = {
+    title: '#000000',
+    description: '#000000',
+    border: '#000000',
+    clause: '#000000',
+    opportunities: '#000000',
+    date: '#000000',
+    contact: '#000000',
+    qr: '#000000',
+  };
 
   // Campos del formulario
   ticketTitle = '';
@@ -113,10 +137,14 @@ export class ParameterizerComponent implements AfterViewInit {
   startRectAreaY: number = 0;
   endRectAreaY: number = 0;
 
-  // SE EJECUTA DESPUÉS DE LA INICIALIZACIÓN DE LA VISTA
-  ngAfterViewInit() {
-    this.ticketDrawingService.setupCanvas(this.canvas); // Inicializa el canvas
-    this.drawTicket(); // Dibuja el boleto con los valores iniciales
+  async ngAfterViewInit() {
+    this.ticketDrawingService.setupCanvas(this.canvas);
+    this.drawTicket();
+
+    // Carga los thumbnails en segundo plano
+    this.thumbnails = await Promise.all(
+      this.originalBackgroundImages.map((img) => this.generateThumbnail(img))
+    );
   }
 
   // DIBUJA EL BOLETO EN EL CANVAS USANDO LOS VALORES ACTUALES DEL FORMULARIO
@@ -126,6 +154,7 @@ export class ParameterizerComponent implements AfterViewInit {
     this.ticketDrawingService.drawTicket(
       this.canvas,
       this.selectedFontColor,
+      this.fontColors,
       this.ticketBackground,
       this.ticketTitle,
       this.ticketDescription,
@@ -199,22 +228,50 @@ export class ParameterizerComponent implements AfterViewInit {
   openFontColorPicker() {
     const sheetRef = this.bottomSheet.open(FontColorPickerComponent);
 
-    sheetRef.afterDismissed().subscribe((color: string) => {
-      if (color) {
-        this.selectedFontColor = color;
-        this.drawTicket(); // Redibuja el boleto con el nuevo color
-      }
-    });
+    sheetRef
+      .afterDismissed()
+      .subscribe((result: { color: string; element: keyof FontColors }) => {
+        if (result?.color && result?.element) {
+          this.fontColors[result.element] = result.color;
+          this.drawTicket();
+        }
+      });
   }
 
   openBackgroundPicker() {
-    const sheetRef = this.bottomSheet.open(BackgroundPickerComponent);
+    const sheetRef = this.bottomSheet.open(BackgroundPickerComponent, {
+      data: {
+        thumbnails: this.thumbnails,
+        originals: this.originalBackgroundImages,
+      },
+    });
 
     sheetRef.afterDismissed().subscribe((background: string) => {
       if (background) {
         this.ticketBackground = background;
         this.drawTicket();
       }
+    });
+  }
+
+  async generateThumbnail(url: string, size = 60): Promise<string> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = url;
+      img.crossOrigin = 'anonymous';
+
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, size, size);
+          const thumbnail = canvas.toDataURL('image/jpg', 0.7);
+          resolve(thumbnail);
+        }
+      };
     });
   }
 
