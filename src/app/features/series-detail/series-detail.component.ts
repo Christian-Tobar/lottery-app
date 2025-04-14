@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FirestoreService } from '../../services/firestore.service';
 import { CommonModule, CurrencyPipe } from '@angular/common';
@@ -7,6 +7,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { FormControl } from '@angular/forms';
 import { PrintBatch, Ticket } from '../../models/models';
 import { PdfticketService } from '../../services/pdfticket.service';
+import { TicketDrawingService } from '../../services/ticket-drawing.service';
 
 interface NumberedPrintBatch extends PrintBatch {
   batchNumber: number;
@@ -23,7 +24,9 @@ export class SeriesDetailComponent {
   private route = inject(ActivatedRoute);
   private firestoreService = inject(FirestoreService);
   private pdfticket = inject(PdfticketService);
+  private ticketDrawingService = inject(TicketDrawingService);
 
+  ticketImage = signal<string | null>(null);
   series = signal<any>(null);
   isLoading = signal(true);
   availableTickets: Ticket[] = [];
@@ -49,7 +52,9 @@ export class SeriesDetailComponent {
     }
 
     this.series.set(loadedSeries);
+    await this.loadTicketImage(loadedSeries);
     await this.loadPrintBatches(seriesId);
+
     this.isLoading.set(false);
   }
 
@@ -162,5 +167,32 @@ export class SeriesDetailComponent {
     this.pdfticket.generateTicketsPdf(series, ticketsToPrint);
 
     this.isLoading.set(false);
+  }
+
+  async loadTicketImage(series: any) {
+    const canvas = document.createElement('canvas');
+    const canvasRef = {
+      nativeElement: canvas,
+    } as ElementRef<HTMLCanvasElement>;
+
+    this.ticketDrawingService.setupCanvas(canvasRef);
+
+    await this.ticketDrawingService.drawTicket(
+      canvasRef,
+      series.fontColors,
+      series.ticketBackground,
+      series.ticketTitle,
+      series.ticketDescription,
+      series.date,
+      series.contact,
+      series.ticketLogo,
+      series.opportunities,
+      series.figures,
+      series.gracePeriodValue,
+      series.gracePeriodUnit
+    );
+
+    const imageUrl = canvas.toDataURL('image/png');
+    this.ticketImage.set(imageUrl);
   }
 }

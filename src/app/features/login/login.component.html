@@ -1,43 +1,66 @@
-<div class="login-container">
-  <div class="logo-container">
-    <img src="assets/logo.png" alt="Logo de la app" />
+<div class="pt-4 m-0">
+  <div class="login-container">
+    <div class="logo-container">
+      <img src="assets/logo.png" alt="Logo de la app" />
+    </div>
+    <h2>Iniciar sesión</h2>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <mat-form-field appearance="outline" class="w-full mb-4">
+        <mat-label>Email</mat-label>
+        <input matInput type="email" formControlName="email" />
+        <mat-error
+          *ngIf="form.controls.email.touched && form.controls.email.invalid"
+        >
+          <small *ngIf="form.controls.email.errors?.['required']">
+            El email es obligatorio.
+          </small>
+          <small *ngIf="form.controls.email.errors?.['email']">
+            Email inválido.
+          </small>
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full mb-4">
+        <mat-label>Contraseña</mat-label>
+        <input
+          matInput
+          [type]="hide() ? 'password' : 'text'"
+          formControlName="password"
+        />
+        <button
+          mat-icon-button
+          class="no-background"
+          matSuffix
+          (click)="clickEvent($event)"
+          [attr.aria-label]="'Toggle password visibility'"
+          [attr.aria-pressed]="!hide()"
+          type="button"
+        >
+          <mat-icon>{{ hide() ? "visibility_off" : "visibility" }}</mat-icon>
+        </button>
+        <mat-error
+          *ngIf="
+            form.controls.password.touched && form.controls.password.invalid
+          "
+        >
+          La contraseña es obligatoria.
+        </mat-error>
+      </mat-form-field>
+
+      <button
+        mat-flat-button
+        color="primary"
+        class="w-full"
+        type="submit"
+        [disabled]="form.invalid || loading"
+      >
+        {{ loading ? "Cargando..." : "Entrar" }}
+      </button>
+
+      <div class="error mt-2" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+    </form>
   </div>
-  <h2>Iniciar sesión</h2>
-
-  <form [formGroup]="form" (ngSubmit)="onSubmit()">
-    <label>
-      Email:
-      <input type="email" formControlName="email" />
-    </label>
-    <div
-      class="error"
-      *ngIf="form.controls.email.touched && form.controls.email.invalid"
-    >
-      <small *ngIf="form.controls.email.errors?.['required']"
-        >El email es obligatorio.</small
-      >
-      <small *ngIf="form.controls.email.errors?.['email']"
-        >Email inválido.</small
-      >
-    </div>
-
-    <label>
-      Contraseña:
-      <input type="password" formControlName="password" />
-    </label>
-    <div
-      class="error"
-      *ngIf="form.controls.password.touched && form.controls.password.invalid"
-    >
-      <small>La contraseña es obligatoria.</small>
-    </div>
-
-    <button type="submit" [disabled]="form.invalid || loading">
-      {{ loading ? "Cargando..." : "Entrar" }}
-    </button>
-
-    <div class="error" *ngIf="errorMessage">
-      {{ errorMessage }}
-    </div>
-  </form>
 </div>

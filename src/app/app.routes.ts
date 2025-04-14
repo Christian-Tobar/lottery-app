@@ -7,8 +7,12 @@ import { authGuard } from './core/guards/auth.guard';
 import { LoginComponent } from './features/login/login.component';
 
 export const routes: Routes = [
-  { path: '', component: ParameterizerComponent, canActivate: [authGuard] },
-  { path: 'series', component: SeriesListComponent, canActivate: [authGuard] },
+  { path: '', component: SeriesListComponent, canActivate: [authGuard] },
+  {
+    path: 'configurador',
+    component: ParameterizerComponent,
+    canActivate: [authGuard],
+  },
   {
     path: 'series/:id',
     component: SeriesDetailComponent,

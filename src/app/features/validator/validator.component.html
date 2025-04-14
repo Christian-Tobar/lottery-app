@@ -1,15 +1,32 @@
-<div class="page-container">
-  <div class="p-5">
-    <h3>Validador de Boletos</h3>
+<div class="p-5 pt-4 pb-0">
+  <h3 *ngIf="isScanning">Validar Boletos</h3>
 
-    <!-- Escáner QR centrado -->
-    <div *ngIf="isScanning" class="scanner-box">
-      <zxing-scanner (scanSuccess)="onQrScanned($event)"></zxing-scanner>
+  <!-- Escáner QR centrado -->
+  <div *ngIf="isScanning" class="scanner-box">
+    <zxing-scanner (scanSuccess)="onQrScanned($event)"></zxing-scanner>
+  </div>
+
+  <!-- Información de resultado de escaneo -->
+  <div *ngIf="!isScanning" class="ticket-info">
+    <h3 [ngClass]="{ 'text-success': ticketInfo, 'text-warn': !ticketInfo }">
+      Código QR {{ ticketInfo ? "válido" : "inválido" }}
+    </h3>
+
+    <p *ngIf="ticketInfo" class="success-message">
+      <strong>
+        El código QR escaneado corresponde a un boleto válido. Compare la
+        información almacenada en el sistema con el boleto impreso y los
+        detalles de su serie.
+      </strong>
+    </p>
+
+    <!-- Mostrar error si no hay ticketInfo pero sí hay validationMessage -->
+    <div *ngIf="!ticketInfo && validationMessage" class="error-message">
+      {{ validationMessage }}
     </div>
 
-    <!-- Información del boleto sin tarjeta -->
-    <div *ngIf="!isScanning" class="ticket-info">
-      <h3>Boleto Escaneado</h3>
+    <!-- Información del ticket -->
+    <div *ngIf="ticketInfo">
       <p><strong>Serie ID:</strong> {{ ticketInfo.seriesId }}</p>
       <p><strong>Ticket ID:</strong> {{ ticketInfo.id }}</p>
       <p><strong>Números:</strong> {{ ticketInfo.numbers.join(", ") }}</p>
@@ -25,14 +42,29 @@
           {{ ticketInfo.printBatchInfo.printedAt | date : "medium" }}
         </p>
       </div>
+    </div>
 
-      <button mat-raised-button color="primary" (click)="startScanning()">
-        🔄 Escanear otro boleto
-      </button>
+    <div class="flex mt-4 gap-3">
+      <div>
+        <button mat-fab extended (click)="startScanning()">
+          <mat-icon class="material-symbols-outlined">qr_code_scanner</mat-icon>
+          Escanear otro boleto
+        </button>
+      </div>
 
-      <button mat-button color="accent" (click)="goToSeriesDetails()">
-        🔍 Ver detalles de la serie
-      </button>
+      <div>
+        <button
+          *ngIf="ticketInfo"
+          mat-fab
+          extended
+          (click)="goToSeriesDetails()"
+        >
+          <mat-icon class="material-symbols-outlined"
+            >confirmation_number</mat-icon
+          >
+          Ver detalles de la serie
+        </button>
+      </div>
     </div>
   </div>
 </div>

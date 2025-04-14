@@ -64,6 +64,7 @@
             [matDatepicker]="picker"
             placeholder="DD/MM/AAAA"
             [(ngModel)]="ticketDate"
+            [min]="minDate"
             (ngModelChange)="drawTicket()"
           />
           <mat-datepicker-toggle
@@ -81,6 +82,7 @@
             matInput
             placeholder="Ej: 3120000000"
             [(ngModel)]="ticketContact"
+            maxlength="12"
             (ngModelChange)="drawTicket()"
           />
           <mat-icon matSuffix>add_call</mat-icon>
@@ -95,6 +97,8 @@
             type="number"
             placeholder="Ej: 30"
             [(ngModel)]="gracePeriodValue"
+            [min]="1"
+            step="1"
             (ngModelChange)="drawTicket()"
           />
           <mat-icon matSuffix class="material-symbols-outlined">timer</mat-icon>
@@ -151,11 +155,23 @@
 </div>
 
 <ng-template #loadingDialog>
-  <div class="loading-dialog">
+  <div class="p-4">
+    <h4>Generando serie</h4>
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p>Este proceso puede tardar unos minutos, por favor espere...</p>
+  </div>
+</ng-template>
+
+<ng-template #warningDialog let-dialogRef="dialogRef">
+  <div class="p-4">
+    <h4>Información incompleta</h4>
     <p>
-      Generando serie, Este proceso puede tardar unos minutos, por favor
-      espere...
+      Los campos OPORTUNIDADES, CIFRAS y NÚMERO DE CONTACTO son obligatorios
     </p>
+    <div class="text-right mt-4">
+      <button mat-flat-button color="primary" (click)="dialogRef.close()">
+        Aceptar
+      </button>
+    </div>
   </div>
 </ng-template>

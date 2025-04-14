@@ -41,14 +41,17 @@ export class ValidatorComponent {
   ) {}
 
   async onQrScanned(qrData: string) {
-    const ticketDetails = await this.qrValidator.validateQr(qrData);
+    const result = await this.qrValidator.validateQr(qrData);
 
-    if (ticketDetails) {
-      // Traer las tandas y ordenarlas por fecha (más reciente primero)
+    if (result.valid) {
+      const ticketDetails = result.ticket;
+
+      // Obtener todas las tandas de la serie
       const rawBatches = await this.firestoreService.getPrintBatches(
         ticketDetails.seriesId
       );
 
+      // Ordenar las tandas por fecha descendente y calcular batchNumber (Tanda 1 = más antigua)
       const sortedBatches: NumberedPrintBatch[] = rawBatches
         .sort(
           (a, b) =>
@@ -56,12 +59,13 @@ export class ValidatorComponent {
         )
         .map((batch, index, arr) => ({
           ...batch,
-          batchNumber: arr.length - index, // Tanda 1 = más antigua
+          batchNumber: arr.length - index,
         }));
 
       let foundBatch: NumberedPrintBatch | null = null;
       let positionInBatch = -1;
 
+      // Buscar el ticket en cada tanda
       for (const batch of sortedBatches) {
         const index = batch.ticketIds.indexOf(ticketDetails.id);
         if (index !== -1) {
@@ -71,23 +75,40 @@ export class ValidatorComponent {
         }
       }
 
+      // Si se encontró la tanda correspondiente, construir printBatchInfo
       if (foundBatch) {
-        const printBatchInfo = {
+        const printBatchInfo: PrintBatchInfo = {
           batchId: foundBatch.id!,
-          printedAt: foundBatch.printedAt!,
+          printedAt: foundBatch.printedAt,
           ticketNumberInBatch: positionInBatch + 1,
           totalInBatch: foundBatch.ticketIds.length,
           batchNumber: foundBatch.batchNumber,
-        } satisfies PrintBatchInfo;
+        };
 
         ticketDetails.printBatchInfo = printBatchInfo;
       }
 
-      this.validationMessage = '✅ Boleto válido';
       this.ticketInfo = ticketDetails;
       this.isScanning = false;
+      this.validationMessage = '';
     } else {
-      this.validationMessage = '❌ Boleto inválido';
+      // Mostrar mensajes claros según el error
+      switch (result.reason) {
+        case 'malformed':
+          this.validationMessage =
+            'El código QR no contiene información valida, y por tanto no se pueden obtener datos del sistema.';
+          break;
+        case 'series-not-found':
+          this.validationMessage =
+            'La serie grabada en el QR no ha sido encontrada';
+          break;
+        case 'ticket-not-found':
+          this.validationMessage =
+            'El boleto no hace parte de la serie especificada por el QR';
+          break;
+      }
+      this.ticketInfo = null;
+      this.isScanning = false;
     }
   }
 

@@ -40,7 +40,10 @@ export class SeriesService {
     if (opportunities! <= 5) {
       tickets = this.groupNumbersIntoTickets(totalNumbers, opportunities!);
     } else {
-      tickets = this.generateOptimizedTickets(totalNumbers, opportunities!);
+      tickets = await this.generateOptimizedTickets(
+        totalNumbers,
+        opportunities!
+      );
     }
 
     this.shuffleTickets(tickets, opportunities!);
@@ -151,13 +154,15 @@ export class SeriesService {
   /**
    * Genera boletos optimizados (para > 5 oportunidades), buscando diversidad de primeros dígitos.
    */
-  private generateOptimizedTickets(
+  private async generateOptimizedTickets(
     numbers: string[],
     opportunities: number
-  ): Ticket[] {
+  ): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
     let availableNumbers = [...numbers];
     this.shuffleArray(availableNumbers);
+
+    let iterations = 0;
 
     while (availableNumbers.length >= opportunities) {
       const selectedNumbers = new Set<string>();
@@ -177,11 +182,16 @@ export class SeriesService {
           numbers: ticketNumbers,
           printed: false,
         });
-        availableNumbers = availableNumbers.filter(
-          (n) => !ticketNumbers.includes(n)
-        );
+
+        const ticketSet = new Set(ticketNumbers);
+        availableNumbers = availableNumbers.filter((n) => !ticketSet.has(n));
       } else {
         break;
+      }
+
+      // 👇 Cede el hilo cada 1000 tickets para evitar bloqueo del navegador
+      if (++iterations % 1000 === 0) {
+        await new Promise((resolve) => requestIdleCallback(resolve));
       }
     }
 

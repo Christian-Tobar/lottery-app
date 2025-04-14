@@ -24,16 +24,6 @@
     }
   }
 
-  button {
-    width: 100%;
-    padding: 0.75rem;
-    background-color: #1976d2;
-    color: white;
-    border: none;
-    border-radius: 0.5rem;
-    cursor: pointer;
-  }
-
   button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -53,7 +43,7 @@
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-  text-align: center; // <-- centra el texto y logo
+  text-align: center;
 }
 
 .logo-container {

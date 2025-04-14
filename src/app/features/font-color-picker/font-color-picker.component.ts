@@ -259,6 +259,7 @@ export class FontColorPickerComponent {
     // Midnight Blue
     '#eaecee',
     '#d5d8dc',
+    '#abb2b9',
     '#808b96',
     '#566573',
     '#2c3e50',
@@ -268,7 +269,16 @@ export class FontColorPickerComponent {
     '#17202a',
 
     // Neutros
-    '#000000', // Negro
+    '#909090',
+    '#808080',
+    '#707070',
+    '#606060',
+    '#505050',
+    '#404040',
+    '#303030',
+    '#202020',
+    '#101010',
+    '#000000',
   ];
 
   selectColor(color: string) {

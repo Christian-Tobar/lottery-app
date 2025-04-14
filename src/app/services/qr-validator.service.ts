@@ -2,6 +2,13 @@ import { Injectable } from '@angular/core';
 import { FirestoreService } from './firestore.service';
 import { Ticket, ValidatedTicket } from '../models/models';
 
+type QrValidationResult =
+  | { valid: true; ticket: ValidatedTicket }
+  | {
+      valid: false;
+      reason: 'malformed' | 'series-not-found' | 'ticket-not-found';
+    };
+
 @Injectable({
   providedIn: 'root',
 })
@@ -10,40 +17,44 @@ export class QrValidatorService {
 
   constructor(private firestoreService: FirestoreService) {}
 
-  async validateQr(qrData: string): Promise<ValidatedTicket | null> {
+  async validateQr(qrData: string): Promise<QrValidationResult> {
     try {
-      // Decodificar QR desde Base64
       const decodedData = atob(qrData);
-      const { s: seriesId, t: ticketId } = JSON.parse(decodedData);
+      const parsed = JSON.parse(decodedData);
+      const { s: seriesId, t: ticketId } = parsed;
 
-      // Obtener información de la serie
-      const series = await this.firestoreService.getSeriesById(seriesId);
-      if (!series) {
-        return null;
+      if (!seriesId || !ticketId) {
+        return { valid: false, reason: 'malformed' };
       }
 
-      // Buscar boletos en caché o Firestore
+      const series = await this.firestoreService.getSeriesById(seriesId);
+      if (!series) {
+        return { valid: false, reason: 'series-not-found' };
+      }
+
       let tickets = this.seriesCache.get(seriesId);
       if (!tickets) {
         tickets = await this.firestoreService.getTickets(seriesId);
         this.seriesCache.set(seriesId, tickets);
       }
 
-      // Buscar el ticket dentro de la serie
       const ticket = tickets.find((t) => t.id === ticketId);
       if (!ticket) {
-        return null;
+        return { valid: false, reason: 'ticket-not-found' };
       }
 
       return {
-        id: ticket.id!,
-        numbers: ticket.numbers,
-        printed: ticket.printed,
-        seriesId: series.id!,
-        date: series.date,
+        valid: true,
+        ticket: {
+          id: ticket.id!,
+          numbers: ticket.numbers,
+          printed: ticket.printed,
+          seriesId: series.id!,
+          date: series.date,
+        },
       };
     } catch (error) {
-      return null;
+      return { valid: false, reason: 'malformed' };
     }
   }
 }

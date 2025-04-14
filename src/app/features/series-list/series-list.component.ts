@@ -77,15 +77,27 @@ export class SeriesListComponent {
           createdAt: series.createdAt ?? '',
         }));
 
-      // Generar una imagen por cada serie
-      for (const series of this.seriesList) {
-        await this.generateTicketImage(series);
-      }
+      // Comenzar a generar imágenes en segundo plano
+      this.generateImagesInBatches(this.seriesList);
     } catch (error) {
       this.errorMessage = 'Error al cargar las series';
       console.error(error);
     } finally {
       this.loading = false;
+    }
+  }
+
+  async generateImagesInBatches(seriesList: Series[], batchSize = 3) {
+    for (let i = 0; i < seriesList.length; i += batchSize) {
+      const batch = seriesList.slice(i, i + batchSize);
+      await Promise.all(
+        batch.map(async (series) => {
+          await this.generateTicketImage(series);
+        })
+      );
+
+      // Esperar un frame para no congelar la UI
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
   }
 

@@ -82,6 +82,7 @@ export const MY_DATE_FORMATS = {
 })
 export class ParameterizerComponent implements AfterViewInit {
   @ViewChild('loadingDialog') loadingDialog!: TemplateRef<any>; // Referencia al diálogo de carga
+  @ViewChild('warningDialog') warningDialog!: TemplateRef<any>; // Referencia al diálogo de carga
   @ViewChild('ticketCanvas') canvas!: ElementRef<HTMLCanvasElement>; // Referencia al canvas del boleto
 
   // INYECCIÓN DE SERVICIOS NECESARIOS
@@ -96,6 +97,7 @@ export class ParameterizerComponent implements AfterViewInit {
   opportunities = [1, 2, 3, 4, 5, 6]; // Opciones de oportunidades disponibles
   figures = [1, 2, 3, 4, 5]; // Figuras disponibles
   graceUnits = ['Horas', 'Días']; // Unidades de periodo de gracia
+  minDate: Date = new Date();
   sectionFontColors: { [key: string]: string } = {};
   thumbnails: string[] = [];
   originalBackgroundImages: string[] = [
@@ -149,7 +151,8 @@ export class ParameterizerComponent implements AfterViewInit {
 
   // DIBUJA EL BOLETO EN EL CANVAS USANDO LOS VALORES ACTUALES DEL FORMULARIO
   drawTicket() {
-    const formattedDate = this.formatDate(new Date(this.ticketDate)); // Asegura formato correcto
+    const parsedDate = this.parseDateFromString(this.ticketDate);
+    const formattedDate = this.formatDate(parsedDate);
 
     this.ticketDrawingService.drawTicket(
       this.canvas,
@@ -176,11 +179,18 @@ export class ParameterizerComponent implements AfterViewInit {
 
   // GENERA Y GUARDA UNA NUEVA SERIE EN FIRESTORE
   async generateSeries() {
+    const validation = await this.validateForm();
+    if (!validation) {
+      this.showWarningDialog();
+      return;
+    }
+
     const dialogRef = this.dialog.open(this.loadingDialog, {
       disableClose: true, // Impide que el usuario cierre el diálogo
     });
 
-    const formattedDate = this.formatDate(new Date(this.ticketDate));
+    const parsedDate = this.parseDateFromString(this.ticketDate);
+    const formattedDate = this.formatDate(parsedDate);
 
     dialogRef.afterOpened().subscribe(async () => {
       try {
@@ -274,11 +284,41 @@ export class ParameterizerComponent implements AfterViewInit {
     });
   }
 
+  showWarningDialog() {
+    this.dialog.open(this.warningDialog, {});
+  }
+
+  private validateForm(): boolean {
+    if (
+      !this.selectedFigures ||
+      !this.selectedOpportunities ||
+      !this.ticketContact
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
   // FORMATEA UNA FECHA AL FORMATO DD/MM/YYYY
   formatDate(date: Date): string {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
+  }
+
+  parseDateFromString(dateStr: any): Date {
+    if (dateStr instanceof Date) {
+      return dateStr;
+    }
+
+    if (typeof dateStr === 'string' && dateStr.includes('/')) {
+      const [day, month, year] = dateStr.split('/').map(Number);
+      return new Date(year, month - 1, day);
+    }
+
+    console.warn('Fecha no válida:', dateStr);
+    return new Date();
   }
 }

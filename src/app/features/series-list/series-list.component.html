@@ -2,7 +2,7 @@
 
 <!-- Loader -->
 @if (loading) {
-<div class="flex justify-content-center my-4 shrink-0">
+<div class="flex justify-content-center pt-7 shrink-0">
   <mat-spinner></mat-spinner>
 </div>
 }
@@ -32,11 +32,18 @@
         >
       </mat-card-header>
       <img
+        *ngIf="seriesImages[series.id]; else loadingImg"
         class="mt-2"
         mat-card-image
         [src]="seriesImages[series.id]"
         alt="Imagen de la serie"
       />
+      <ng-template #loadingImg>
+        <div style="height: 150px; background: #eee">
+          Cargando vista previa...
+        </div>
+      </ng-template>
+
       <mat-card-content> </mat-card-content>
       <mat-card-actions>
         <button

@@ -6,6 +6,7 @@
   }
   <span class="logo-text ml-2">Boletoss</span>
   <span class="toolbar-spacer"></span>
+  <!--
   <button
     mat-icon-button
     class="example-icon favorite-icon"
@@ -20,7 +21,7 @@
   >
     <mat-icon class="text-white">share</mat-icon>
   </button>
-
+  -->
   <button
     *ngIf="authService.isLoggedIn()"
     mat-icon-button
@@ -46,7 +47,7 @@
     <mat-nav-list>
       <mat-list-item
         (click)="sidenav.toggle()"
-        routerLink="/"
+        routerLink="configurador"
         routerLinkActive="active"
         ><mat-icon matListItemIcon class="material-symbols-outlined"
           >confirmation_number</mat-icon
@@ -55,7 +56,7 @@
       </mat-list-item>
       <mat-list-item
         (click)="sidenav.toggle()"
-        routerLink="series"
+        routerLink="/"
         routerLinkActive="active"
         ><mat-icon matListItemIcon class="material-symbols-outlined"
           >quick_reference_all</mat-icon

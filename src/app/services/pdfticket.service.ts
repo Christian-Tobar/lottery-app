@@ -69,7 +69,6 @@ export class PdfticketService {
     // Obtener imagen de fondo desde caché, o generar una nueva si no existe
     let backgroundImage = this.backgroundCache.get(seriesId);
 
-    console.log(series);
     if (!backgroundImage) {
       backgroundImage = await this.generateBackgroundImage(
         series.fontColors,
@@ -167,7 +166,7 @@ export class PdfticketService {
       // Se reduce el tamaño de fuente en los layouts tipo dado (4 a 6 números)
       let fontSizeFactor = 1;
       if (selectedOpportunity >= 4 && selectedOpportunity <= 6) {
-        fontSizeFactor = 0.8;
+        fontSizeFactor = 0.7;
       }
 
       doc.setFontSize(dynamicFontSize * fontSizeFactor);
