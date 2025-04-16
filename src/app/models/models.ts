@@ -38,9 +38,11 @@ export interface LotterySeries {
   tickets: Ticket[];
   fontColors: FontColors;
   ticketBackground: string;
+  ticketBackBackground: string;
   totalTickets?: number;
   printedTickets?: number;
   availableTickets?: number;
+  ticketClause: string;
   gracePeriodValue: number | null;
   gracePeriodUnit: string;
   ticketLogo: boolean;

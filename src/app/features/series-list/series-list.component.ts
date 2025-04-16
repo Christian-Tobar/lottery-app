@@ -122,9 +122,7 @@ export class SeriesListComponent {
       series.contact,
       series.ticketLogo,
       series.opportunities,
-      series.figures,
-      series.gracePeriodValue,
-      series.gracePeriodUnit
+      series.figures
     );
 
     // Obtener imagen como base64

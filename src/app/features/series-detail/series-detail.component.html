@@ -11,21 +11,41 @@
   <div class="col-12 md:col-6 p-5 pt-4 pb-0">
     <h3>Detalles de la serie</h3>
     <p><strong>Identificacor:</strong> {{ series().id }}</p>
+    <p>
+      <strong>Fecha de creación:</strong>
+      {{ series().createdAt | date : "dd 'de' MMMM 'de' y hh:mm a" }}
+    </p>
+
     <div class="flex justify-content-start align-items-center">
       <p><strong>Total de Boletos:</strong> {{ series().totalTickets }}</p>
       <p class="ml-4">
         <strong>Boletos Impresos:</strong> {{ series().printedTickets }}
       </p>
+
+      <p class="ml-4">
+        <strong>Boletos Disponibles:</strong> {{ series().availableTickets }}
+      </p>
     </div>
 
     <h3>Detalles del boleto</h3>
 
-    @if (ticketImage()) {
-    <img
-      [src]="ticketImage()"
-      alt="Vista previa del boleto"
-      class="w-full max-w-md"
-    />
+    @if (ticketFrontImage()) {
+    <div class="grid">
+      <div class="col-12 md:col-6">
+        <img
+          [src]="ticketFrontImage()"
+          alt="Vista previa del boleto"
+          class="w-full max-w-md"
+        />
+      </div>
+      <div class="col-12 md:col-6">
+        <img
+          [src]="ticketBackImage()"
+          alt="Vista previa del boleto"
+          class="w-full max-w-md"
+        />
+      </div>
+    </div>
     } @else {
     <p>Cargando imagen del boleto...</p>
     }
@@ -37,6 +57,20 @@
     <button mat-fab extended color="primary" (click)="printNewTickets()">
       <mat-icon class="material-symbols-outlined mr-1">print</mat-icon>
       Imprimir Boletos
+    </button>
+
+    <button
+      mat-fab
+      extended
+      color="primary"
+      (click)="printNewBackTickets()"
+      [disabled]="!ticketBackAvailable"
+      class="ml-3"
+    >
+      <mat-icon class="material-symbols-outlined mr-1"
+        >article_shortcut</mat-icon
+      >
+      imprimir reverso
     </button>
 
     <div

@@ -26,7 +26,11 @@ export class SeriesDetailComponent {
   private pdfticket = inject(PdfticketService);
   private ticketDrawingService = inject(TicketDrawingService);
 
-  ticketImage = signal<string | null>(null);
+  ticketFrontImage = signal<string | null>(null);
+  ticketBackImage = signal<string | null>(null);
+
+  ticketBackAvailable = false;
+
   series = signal<any>(null);
   isLoading = signal(true);
   availableTickets: Ticket[] = [];
@@ -187,12 +191,54 @@ export class SeriesDetailComponent {
       series.contact,
       series.ticketLogo,
       series.opportunities,
-      series.figures,
-      series.gracePeriodValue,
-      series.gracePeriodUnit
+      series.figures
     );
 
     const imageUrl = canvas.toDataURL('image/png');
-    this.ticketImage.set(imageUrl);
+    this.ticketFrontImage.set(imageUrl);
+
+    // Creamos el canvas del reverso
+    const backCanvas = document.createElement('canvas');
+    const backCanvasRef = {
+      nativeElement: backCanvas,
+    } as ElementRef<HTMLCanvasElement>;
+
+    this.ticketDrawingService.setupCanvas(backCanvasRef);
+
+    const hasBackContent =
+      series.ticketClause?.trim() !== '' &&
+      series.gracePeriodUnit?.trim() !== '' &&
+      series.gracePeriodValue != null;
+
+    if (hasBackContent) {
+      await this.ticketDrawingService.drawTicketBack(
+        backCanvasRef,
+        series.fontColors,
+        series.ticketBackBackground,
+        series.ticketClause,
+        series.gracePeriodUnit,
+        series.gracePeriodValue,
+        false // no rotar (para preview)
+      );
+
+      this.ticketBackAvailable = true;
+    } else {
+      // Si no hay contenido, dibujamos un fondo por defecto claro
+      const ctx = backCanvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#f2f2f2'; // gris claro
+        ctx.fillRect(0, 0, backCanvas.width, backCanvas.height);
+      }
+    }
+
+    const backImageUrl = backCanvas.toDataURL('image/png');
+    this.ticketBackImage.set(backImageUrl);
+  }
+
+  printNewBackTickets() {
+    const series = this.series();
+    if (!series) return;
+
+    this.pdfticket.generateTicketsBackPdf(series);
   }
 }

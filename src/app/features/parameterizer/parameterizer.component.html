@@ -2,6 +2,7 @@
   <div class="col-12 pt-4 pl-5"><h3>Personalizar Boleto</h3></div>
   <div class="col-12 md:col-6 p-5 pt-1 md:pr-0">
     <div class="grid">
+      @if (isFrontVisible) {
       <div class="col-12 p-2">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Título</mat-label>
@@ -28,7 +29,7 @@
           >
         </mat-form-field>
       </div>
-      <div class="col-12 md:col-4 p-2">
+      <div class="col-12 md:col-6 p-2">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Oportunidades</mat-label>
           <mat-select
@@ -42,7 +43,7 @@
         </mat-form-field>
       </div>
 
-      <div class="col-12 md:col-4 p-2">
+      <div class="col-12 md:col-6 p-2">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Cifras</mat-label>
           <mat-select
@@ -56,7 +57,7 @@
         </mat-form-field>
       </div>
 
-      <div class="col-12 md:col-4 p-2">
+      <div class="col-12 md:col-6 p-2">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Fecha Sorteo</mat-label>
           <input
@@ -75,7 +76,7 @@
         </mat-form-field>
       </div>
 
-      <div class="col-12 md:col-4 p-2">
+      <div class="col-12 md:col-6 p-2">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Número Contacto</mat-label>
           <input
@@ -89,7 +90,21 @@
         </mat-form-field>
       </div>
 
-      <div class="col-12 md:col-4 p-2">
+      } @if (!isFrontVisible) {
+
+      <div class="col-12 p-2">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Clausula</mat-label>
+          <textarea
+            style="min-height: 208px"
+            [(ngModel)]="ticketClause"
+            (ngModelChange)="drawTicket()"
+            matInput
+          ></textarea>
+        </mat-form-field>
+      </div>
+
+      <div class="col-12 md:col-6 p-2">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Caducidad</mat-label>
           <input
@@ -105,9 +120,9 @@
         </mat-form-field>
       </div>
 
-      <div class="col-12 md:col-4 p-2">
+      <div class="col-12 md:col-6 p-2">
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Unid. tiempo</mat-label>
+          <mat-label>Unidad de tiempo</mat-label>
           <mat-select
             [(ngModel)]="gracePeriodUnit"
             (ngModelChange)="drawTicket()"
@@ -121,13 +136,16 @@
           >
         </mat-form-field>
       </div>
+      }
     </div>
 
     <div class="flex gap-3 mt-3 flex-wrap justify-content-center">
+      @if (isFrontVisible) {
       <button mat-fab extended (click)="includeLogo()">
         <mat-icon class="material-symbols-outlined">filter_vintage</mat-icon>
         Incluir logo
       </button>
+      }
       <button mat-fab extended (click)="openBackgroundPicker()">
         <mat-icon class="material-symbols-outlined">image</mat-icon>
         Fondo
@@ -149,29 +167,37 @@
     <div
       class="canvas-container flex flex-column align-items-center h-full w-full"
     >
-      <canvas #ticketCanvas class="w-full max-w-full h-auto"></canvas>
+      <div class="ticket-flip-container" [class.flipped]="!isFrontVisible">
+        <canvas #ticketCanvas class="w-full max-w-full h-auto"></canvas>
+      </div>
+
+      <div class="flex gap-3 mt-3 flex-wrap justify-content-center">
+        <button mat-fab (click)="toggleTicketSide()">
+          <mat-icon class="material-symbols-outlined">360</mat-icon>
+        </button>
+      </div>
     </div>
   </div>
+
+  <ng-template #loadingDialog>
+    <div class="p-4">
+      <h4>Generando serie</h4>
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      <p>Este proceso puede tardar unos minutos, por favor espere...</p>
+    </div>
+  </ng-template>
+
+  <ng-template #warningDialog let-dialogRef="dialogRef">
+    <div class="p-4">
+      <h4>Información incompleta</h4>
+      <p>
+        Los campos OPORTUNIDADES, CIFRAS y NÚMERO DE CONTACTO son obligatorios
+      </p>
+      <div class="text-right mt-4">
+        <button mat-flat-button color="primary" (click)="dialogRef.close()">
+          Aceptar
+        </button>
+      </div>
+    </div>
+  </ng-template>
 </div>
-
-<ng-template #loadingDialog>
-  <div class="p-4">
-    <h4>Generando serie</h4>
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-    <p>Este proceso puede tardar unos minutos, por favor espere...</p>
-  </div>
-</ng-template>
-
-<ng-template #warningDialog let-dialogRef="dialogRef">
-  <div class="p-4">
-    <h4>Información incompleta</h4>
-    <p>
-      Los campos OPORTUNIDADES, CIFRAS y NÚMERO DE CONTACTO son obligatorios
-    </p>
-    <div class="text-right mt-4">
-      <button mat-flat-button color="primary" (click)="dialogRef.close()">
-        Aceptar
-      </button>
-    </div>
-  </div>
-</ng-template>

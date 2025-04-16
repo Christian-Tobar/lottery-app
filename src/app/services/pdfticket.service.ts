@@ -301,4 +301,60 @@ export class PdfticketService {
 
     return ((value - fromMin) * (toMax - toMin)) / (fromMax - fromMin) + toMin;
   }
+
+  async generateTicketsBackPdf(series: any) {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'cm',
+      format: 'letter',
+    });
+
+    const ticketWidth = 10.795;
+    const ticketHeight = 5.588;
+    let x = 0;
+    let y = 0;
+
+    // Aumentamos resolución del canvas
+    const scaleFactor = 3;
+    const canvas = document.createElement('canvas');
+    canvas.width = 360 * scaleFactor;
+    canvas.height = 186 * scaleFactor;
+
+    const canvasRef = {
+      nativeElement: canvas,
+    } as ElementRef<HTMLCanvasElement>;
+
+    // Ajustamos el contexto para escalar dibujo
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.scale(scaleFactor, scaleFactor);
+    }
+
+    this.ticketDrawingService.setupCanvas(canvasRef);
+
+    await this.ticketDrawingService.drawTicketBack(
+      canvasRef,
+      series.fontColors,
+      series.ticketBackBackground,
+      series.ticketClause,
+      series.gracePeriodUnit,
+      series.gracePeriodValue,
+      false
+    );
+
+    const imageData = canvas.toDataURL('image/png');
+
+    for (let i = 0; i < 10; i++) {
+      doc.addImage(imageData, 'PNG', x, y, ticketWidth, ticketHeight);
+
+      if ((i + 1) % 2 === 0) {
+        x = 0;
+        y += ticketHeight;
+      } else {
+        x += ticketWidth;
+      }
+    }
+
+    doc.save(`reversos_${series.id}.pdf`);
+  }
 }

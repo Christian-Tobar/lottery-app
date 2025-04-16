@@ -78,9 +78,7 @@ export class TicketDrawingService {
     ticketContact: string,
     ticketLogo: boolean,
     selectedOpportunity: number | null,
-    selectedFigure: number | null,
-    gracePeriodValue: number | null,
-    gracePeriodUnit: string
+    selectedFigure: number | null
   ) {
     // Si el canvas no existe, salimos sin hacer nada
     if (!canvas) return;
@@ -437,70 +435,6 @@ export class TicketDrawingService {
       ctx.fillText(line, descCenterX, y); // <-- centrado en el espacio horizontal disponible
     });
 
-    if (
-      gracePeriodValue != null && // Verifica que haya valor
-      gracePeriodValue > 0 && // Y que sea mayor a 0
-      gracePeriodUnit != null && // Y que tenga unidad
-      gracePeriodUnit.trim() !== '' // Y que no esté vacía
-    ) {
-      // FORMATO DE TEXTO DE AVISO
-      const unitNormalized = gracePeriodUnit.toLowerCase().trim(); // Normaliza unidad (ej: 'Días' → 'días')
-      const singularUnits: Record<string, string> = {
-        // Diccionario para singular
-        días: 'día',
-        horas: 'hora',
-      };
-
-      const numericValue = Number(gracePeriodValue); // Asegura que sea número
-
-      const unitStr = // Usa singular si el valor es 1
-        numericValue === 1 && singularUnits[unitNormalized]
-          ? singularUnits[unitNormalized]
-          : unitNormalized;
-
-      const noticeText = `IMPORTANTE: Si la persona ganadora no se contacta en un plazo máximo de ${gracePeriodValue} ${unitStr}, no habrá lugar a la entrega del premio o compensación alguna.`; // Texto final del aviso
-
-      const noticeFontSize = 18; // Tamaño de fuente
-      const noticeLineHeight = 15; // Espaciado entre líneas
-      const noticeX = margin + 10; // Posición X del aviso
-      const noticeY = height - margin - 10; // Posición Y inicial (desde abajo)
-
-      ctx.font = `${noticeFontSize}px Arial`; // Configura fuente
-      ctx.fillStyle = fontColors.clause; // Color
-      ctx.textAlign = 'left'; // Alineación izquierda
-
-      const maxNoticeWidth = width - 250 - noticeX; // Ancho máximo permitido para el texto
-
-      // CÁLCULO DE LÍNEAS NECESARIAS
-      const words = noticeText.split(' '); // Divide texto en palabras
-      let line = ''; // Línea actual
-      let lineCount = 1; // Contador de líneas
-
-      for (let i = 0; i < words.length; i++) {
-        const testLine = line + words[i] + ' '; // Simula agregar palabra
-        const testWidth = ctx.measureText(testLine).width; // Mide ancho
-
-        if (testWidth > maxNoticeWidth && i > 0) {
-          line = words[i] + ' '; // Si se pasa, nueva línea
-          lineCount++;
-        } else {
-          line = testLine; // Si no, agregar a línea actual
-        }
-      }
-
-      const adjustedNoticeY = noticeY - (lineCount - 1) * noticeLineHeight; // Reajusta Y para alinear vertical
-
-      // DIBUJAR TEXTO FINAL
-      this.wrapText(
-        ctx,
-        noticeText,
-        noticeX,
-        adjustedNoticeY,
-        maxNoticeWidth,
-        noticeLineHeight
-      );
-    }
-
     // Si hay una figura seleccionada y una cantidad de oportunidades válida
     if (selectedFigure != null && selectedOpportunity != null) {
       // REGISTRO DE POSICIONES Y
@@ -526,16 +460,6 @@ export class TicketDrawingService {
         descriptionBottomY =
           descriptionStartY +
           (descriptionLines.length - 1) * descriptionLineHeight;
-      }
-
-      // Verificar si se debe mostrar letra menuda (según valor y unidad)
-      if (
-        gracePeriodValue != null &&
-        gracePeriodValue > 0 &&
-        gracePeriodUnit != null &&
-        gracePeriodUnit.trim() !== ''
-      ) {
-        showFinePrint = true;
       }
 
       // Agrupar los elementos cuya posición Y es válida (no null)
@@ -1135,6 +1059,168 @@ export class TicketDrawingService {
     }
 
     return lines;
+  }
+
+  drawTicketBack(
+    canvasRef: ElementRef<HTMLCanvasElement>,
+    fontColors: FontColors,
+    background: string,
+    ticketClause: string,
+    gracePeriodUnit: string,
+    gracePeriodValue: number | null,
+    rotate: boolean = true // NUEVO PARÁMETRO
+  ) {
+    const canvas = canvasRef.nativeElement;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.save(); // Guardar estado inicial completo
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const margin = 25;
+    const areaWidth = width - 2 * margin;
+    const areaHeight = height - 2 * margin;
+    const textHorizontalPadding = 40;
+
+    // Si se solicita rotación, aplicamos transformación espejo
+    if (rotate) {
+      ctx.save();
+      ctx.translate(width, 0);
+      ctx.scale(-1, 1);
+    }
+
+    ctx.clearRect(0, 0, width, height);
+
+    // DIBUJAR FONDO
+    if (background?.startsWith('#')) {
+      ctx.fillStyle = background;
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      const bgImage = this.backgroundImages?.[background];
+      if (bgImage) {
+        if (bgImage.complete) {
+          ctx.drawImage(bgImage, 0, 0, width, height);
+        } else {
+          bgImage.onload = () => {
+            ctx.drawImage(bgImage, 0, 0, width, height);
+          };
+        }
+      }
+    }
+
+    ctx.strokeStyle = fontColors.border || '#000';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(margin, margin, areaWidth, areaHeight);
+
+    ctx.fillStyle = fontColors.clause || '#000';
+
+    const maxFontSize = 24;
+    const minFontSize = 8;
+
+    const wrapText = (text: string, fontSize: number): string[] => {
+      ctx.font = `${fontSize}px Arial`;
+      const words = text.split(' ');
+      const lines: string[] = [];
+      let line = '';
+      const maxLineWidth = width - 2 * (margin + textHorizontalPadding);
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxLineWidth && n > 0) {
+          lines.push(line.trim());
+          line = words[n] + ' ';
+        } else {
+          line = testLine;
+        }
+      }
+      lines.push(line.trim());
+      return lines;
+    };
+
+    const getLines = (text: string, fontSize: number): string[] => {
+      const paragraphs = text.split('\n');
+      const wrappedLines: string[] = [];
+
+      for (const paragraph of paragraphs) {
+        const wrappedParagraph = wrapText(paragraph, fontSize);
+        wrappedLines.push(...wrappedParagraph);
+      }
+      return wrappedLines;
+    };
+
+    const titleFontSize = 28;
+    const title = '¡IMPORTANTE!';
+
+    let fontSize = maxFontSize;
+    let lines: string[] = [];
+
+    while (fontSize >= minFontSize) {
+      lines = getLines(ticketClause, fontSize);
+      const totalTextHeight = lines.length * fontSize * 1.2;
+      if (totalTextHeight <= areaHeight) break;
+      fontSize--;
+    }
+
+    const lineHeight = fontSize * 1.2;
+    const textHeight = lines.length * lineHeight;
+    let y = margin + (areaHeight - textHeight) / 2 + lineHeight / 2;
+
+    if (ticketClause !== '') {
+      ctx.font = `bold ${titleFontSize}px Arial`;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+      ctx.fillText(title, width / 2, y - lineHeight * 0.05);
+      y += lineHeight * 2;
+    }
+
+    ctx.font = `${fontSize}px Arial`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+
+    for (const line of lines) {
+      ctx.fillText(line, width / 2, y);
+      y += lineHeight;
+    }
+
+    if (
+      gracePeriodValue != null &&
+      gracePeriodValue > 0 &&
+      gracePeriodUnit != null &&
+      gracePeriodUnit.trim() !== ''
+    ) {
+      const unitNormalized = gracePeriodUnit.toLowerCase().trim();
+      const singularUnits: Record<string, string> = {
+        días: 'día',
+        horas: 'hora',
+      };
+
+      const numericValue = Number(gracePeriodValue);
+      const unitStr =
+        numericValue === 1 && singularUnits[unitNormalized]
+          ? singularUnits[unitNormalized]
+          : unitNormalized;
+
+      const noticeText = `CADUCIDAD DEL BOLETO: ${gracePeriodValue} ${unitStr} a partir de la fecha y hora del sorteo.`;
+
+      const noticeFontSize = 24;
+      const noticeLines = getLines(noticeText, noticeFontSize);
+
+      ctx.font = `${noticeFontSize}px Arial`;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+
+      for (const line of noticeLines) {
+        ctx.fillText(line, width / 2, y + 20);
+        y += noticeFontSize * 1.2;
+      }
+    }
+
+    // Restaurar después del espejo (si se usó)
+    if (rotate) ctx.restore();
+
+    ctx.restore(); // Restauramos el estado original del canvas
   }
 
   preloadBackgroundImages(urls: string[]) {

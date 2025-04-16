@@ -83,7 +83,7 @@ export const MY_DATE_FORMATS = {
 export class ParameterizerComponent implements AfterViewInit {
   @ViewChild('loadingDialog') loadingDialog!: TemplateRef<any>; // Referencia al diálogo de carga
   @ViewChild('warningDialog') warningDialog!: TemplateRef<any>; // Referencia al diálogo de carga
-  @ViewChild('ticketCanvas') canvas!: ElementRef<HTMLCanvasElement>; // Referencia al canvas del boleto
+  @ViewChild('ticketCanvas') ticketCanvas!: ElementRef<HTMLCanvasElement>; // Referencia al canvas del boleto
 
   // INYECCIÓN DE SERVICIOS NECESARIOS
   private ticketService = inject(SeriesService);
@@ -97,6 +97,11 @@ export class ParameterizerComponent implements AfterViewInit {
   opportunities = [1, 2, 3, 4, 5, 6]; // Opciones de oportunidades disponibles
   figures = [1, 2, 3, 4, 5]; // Figuras disponibles
   graceUnits = ['Horas', 'Días']; // Unidades de periodo de gracia
+  isFrontVisible = true;
+  isFlipping = false;
+  frontBackground: string = '';
+  backBackground: string = '';
+
   minDate: Date = new Date();
   sectionFontColors: { [key: string]: string } = {};
   thumbnails: string[] = [];
@@ -130,8 +135,7 @@ export class ParameterizerComponent implements AfterViewInit {
   ticketLogo: boolean = false;
   selectedOpportunities: null = null;
   selectedFigures: null = null;
-
-  ticketBackground: string = '';
+  ticketClause: string = `No se pagarán los premios obtenidos con este boleto si el mismo se encuentra incompleto, presenta enmendaduras, tachaduras, rupturas, perforaciones, alteraciones o cualquier defecto que no sea atribuible al proceso de impresión. El único documento que garantiza el pago de los premios es el boleto original, válido y pagado al portador.`;
   gracePeriodValue: number | null = null;
   gracePeriodUnit: 'Días' | 'Horas' | '' = '';
 
@@ -140,7 +144,7 @@ export class ParameterizerComponent implements AfterViewInit {
   endRectAreaY: number = 0;
 
   async ngAfterViewInit() {
-    this.ticketDrawingService.setupCanvas(this.canvas);
+    this.ticketDrawingService.setupCanvas(this.ticketCanvas);
     this.drawTicket();
 
     // Carga los thumbnails en segundo plano
@@ -151,29 +155,40 @@ export class ParameterizerComponent implements AfterViewInit {
 
   // DIBUJA EL BOLETO EN EL CANVAS USANDO LOS VALORES ACTUALES DEL FORMULARIO
   drawTicket() {
-    const parsedDate = this.parseDateFromString(this.ticketDate);
-    const formattedDate = this.formatDate(parsedDate);
+    if (this.isFrontVisible) {
+      // dibujar anverso
+      const parsedDate = this.parseDateFromString(this.ticketDate);
+      const formattedDate = this.formatDate(parsedDate);
 
-    this.ticketDrawingService.drawTicket(
-      this.canvas,
-      this.fontColors,
-      this.ticketBackground,
-      this.ticketTitle,
-      this.ticketDescription,
-      formattedDate,
-      this.ticketContact,
-      this.ticketLogo,
-      this.selectedOpportunities,
-      this.selectedFigures,
-      this.gracePeriodValue,
-      this.gracePeriodUnit
-    );
+      this.ticketDrawingService.drawTicket(
+        this.ticketCanvas,
+        this.fontColors,
+        this.frontBackground,
+        this.ticketTitle,
+        this.ticketDescription,
+        formattedDate,
+        this.ticketContact,
+        this.ticketLogo,
+        this.selectedOpportunities,
+        this.selectedFigures
+      );
 
-    // ACTUALIZA LOS LÍMITES DEL ÁREA DE NÚMEROS SI SE DETECTA
-    const rect = this.ticketDrawingService.getOpportunityRect();
-    if (rect) {
-      this.startRectAreaY = rect.startY;
-      this.endRectAreaY = rect.endY;
+      // ACTUALIZA LOS LÍMITES DEL ÁREA DE NÚMEROS SI SE DETECTA
+      const rect = this.ticketDrawingService.getOpportunityRect();
+      if (rect) {
+        this.startRectAreaY = rect.startY;
+        this.endRectAreaY = rect.endY;
+      }
+    } else {
+      // dibujar reverso
+      this.ticketDrawingService.drawTicketBack(
+        this.ticketCanvas,
+        this.fontColors,
+        this.backBackground,
+        this.ticketClause,
+        this.gracePeriodUnit,
+        this.gracePeriodValue
+      );
     }
   }
 
@@ -203,8 +218,10 @@ export class ParameterizerComponent implements AfterViewInit {
           this.selectedOpportunities,
           this.selectedFigures,
           this.fontColors,
-          this.ticketBackground,
+          this.frontBackground,
+          this.backBackground,
           this.ticketLogo,
+          this.ticketClause,
           this.gracePeriodValue,
           this.gracePeriodUnit,
           this.startRectAreaY,
@@ -252,12 +269,17 @@ export class ParameterizerComponent implements AfterViewInit {
       data: {
         thumbnails: this.thumbnails,
         originals: this.originalBackgroundImages,
+        isFront: this.isFrontVisible,
       },
     });
 
     sheetRef.afterDismissed().subscribe((background: string) => {
       if (background) {
-        this.ticketBackground = background;
+        if (this.isFrontVisible) {
+          this.frontBackground = background;
+        } else {
+          this.backBackground = background;
+        }
         this.drawTicket();
       }
     });
@@ -282,6 +304,22 @@ export class ParameterizerComponent implements AfterViewInit {
         }
       };
     });
+  }
+
+  toggleTicketSide() {
+    this.isFrontVisible = !this.isFrontVisible;
+
+    // Deja que comience la rotación
+    setTimeout(() => {
+      this.clearCanvas();
+      this.drawTicket();
+    }, 300); // A mitad del tiempo de animación (600ms)
+  }
+
+  clearCanvas() {
+    const canvas = this.ticketCanvas.nativeElement;
+    const ctx = canvas.getContext('2d');
+    ctx?.clearRect(0, 0, canvas.width, canvas.height);
   }
 
   showWarningDialog() {
