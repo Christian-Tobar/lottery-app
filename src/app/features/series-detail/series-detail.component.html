@@ -10,6 +10,19 @@
 <div class="grid p-0 m-0">
   <div class="col-12 md:col-6 p-5 pt-4 pb-0">
     <h3>Detalles de la serie</h3>
+    <p class="flex align-items-center">
+      <span
+        class="status-label"
+        [ngStyle]="{
+          'background-color': getStatusColor(
+            contextService.selectedSeriesCurrentStatus
+          )
+        }"
+      >
+        {{ contextService.selectedSeriesCurrentStatus | titlecase }}
+      </span>
+    </p>
+
     <p><strong>Identificacor:</strong> {{ series().id }}</p>
     <p>
       <strong>Fecha de creación:</strong>
@@ -54,23 +67,32 @@
   <div class="col-12 md:col-6 p-5 pt-4">
     <h3>Historial de impresión</h3>
 
-    <button mat-fab extended color="primary" (click)="printNewTickets()">
+    <button
+      mat-fab
+      extended
+      color="primary"
+      (click)="printNewTickets()"
+      [disabled]="contextService.selectedSeriesCurrentStatus !== 'Activa'"
+    >
       <mat-icon class="material-symbols-outlined mr-1">print</mat-icon>
       Imprimir Boletos
     </button>
 
     <button
       mat-fab
-      extended
       color="primary"
       (click)="printNewBackTickets()"
-      [disabled]="!ticketBackAvailable"
-      class="ml-3"
+      [disabled]="
+        !ticketBackAvailable ||
+        contextService.selectedSeriesCurrentStatus !== 'Activa'
+      "
+      matTooltip="Imprimir reverso"
+      [matTooltipShowDelay]="300"
+      class="ml-3 d-block d-sm-none"
     >
       <mat-icon class="material-symbols-outlined mr-1"
         >article_shortcut</mat-icon
       >
-      imprimir reverso
     </button>
 
     <div

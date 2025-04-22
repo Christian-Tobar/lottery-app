@@ -494,25 +494,25 @@ export class TicketDrawingService {
         2: [
           [0.5, 0.25],
           [0.5, 0.75],
-        ], // Dos en vertical
+        ],
         3: [
           [0.25, 0.25],
           [0.5, 0.5],
           [0.75, 0.75],
-        ], // Diagonal
+        ],
         4: [
           [0.25, 0.25],
           [0.75, 0.25],
           [0.25, 0.75],
           [0.75, 0.75],
-        ], // Esquinas
+        ],
         5: [
           [0.25, 0.25],
           [0.75, 0.25],
           [0.5, 0.5],
           [0.25, 0.75],
           [0.75, 0.75],
-        ], // Esquinas + centro
+        ],
         6: [
           [0.28, 0.25],
           [0.72, 0.25],
@@ -520,7 +520,7 @@ export class TicketDrawingService {
           [0.72, 0.5],
           [0.28, 0.75],
           [0.72, 0.75],
-        ], // Tres pares verticales
+        ],
       };
 
       // Generar el texto de oportunidad con cantidad de "X"
@@ -529,11 +529,28 @@ export class TicketDrawingService {
       // Obtener layout según la cantidad de oportunidades seleccionadas
       const layout = layouts[selectedOpportunity] || [];
 
+      // Calcular tamaño de fuente dinámico (como en PDF)
+      const estimatedCols = Math.ceil(Math.sqrt(selectedOpportunity));
+      const estimatedRows = Math.ceil(selectedOpportunity / estimatedCols);
+      const spacingX = rectWidth / (estimatedCols + 1);
+      const spacingY = rectHeight / (estimatedRows + 1);
+
+      const maxFontSizeX = spacingX * 0.6;
+      const maxFontSizeY = spacingY * 0.6;
+      let dynamicFontSize = Math.min(maxFontSizeX, maxFontSizeY);
+
+      // Reducir tamaño para layouts tipo dado
+      let fontSizeFactor = 1;
+      if (selectedOpportunity >= 4 && selectedOpportunity <= 6) {
+        fontSizeFactor = 0.98;
+      }
+      dynamicFontSize *= fontSizeFactor;
+
       // GUARDAMOS ESTADO PARA AISLAR ESTILOS
       ctx.save();
 
       // ESTILOS PARA LAS FIGURAS
-      ctx.font = `bold 95px Arial`; // Fuente grande en negrita
+      ctx.font = `bold ${dynamicFontSize}px Arial`; // Tamaño de fuente dinámico
       ctx.fillStyle = fontColors.opportunities; // Color configurado para texto
       ctx.textAlign = 'center'; // Centrado horizontal
       ctx.textBaseline = 'middle'; // Centrado vertical
@@ -923,70 +940,6 @@ export class TicketDrawingService {
       const y = descriptionStartY + index * descriptionLineHeight;
       ctx.fillText(line, descCenterX, y); // <-- centrado en el espacio horizontal disponible
     });
-
-    if (
-      gracePeriodValue != null && // Verifica que haya valor
-      gracePeriodValue > 0 && // Y que sea mayor a 0
-      gracePeriodUnit != null && // Y que tenga unidad
-      gracePeriodUnit.trim() !== '' // Y que no esté vacía
-    ) {
-      // FORMATO DE TEXTO DE AVISO
-      const unitNormalized = gracePeriodUnit.toLowerCase().trim(); // Normaliza unidad (ej: 'Días' → 'días')
-      const singularUnits: Record<string, string> = {
-        // Diccionario para singular
-        días: 'día',
-        horas: 'hora',
-      };
-
-      const numericValue = Number(gracePeriodValue); // Asegura que sea número
-
-      const unitStr = // Usa singular si el valor es 1
-        numericValue === 1 && singularUnits[unitNormalized]
-          ? singularUnits[unitNormalized]
-          : unitNormalized;
-
-      const noticeText = `IMPORTANTE: Si la persona ganadora no se contacta en un plazo máximo de ${gracePeriodValue} ${unitStr}, no habrá lugar a la entrega del premio o compensación alguna.`; // Texto final del aviso
-
-      const noticeFontSize = 18; // Tamaño de fuente
-      const noticeLineHeight = 15; // Espaciado entre líneas
-      const noticeX = margin + 10; // Posición X del aviso
-      const noticeY = height - margin - 10; // Posición Y inicial (desde abajo)
-
-      ctx.font = `${noticeFontSize}px Arial`; // Configura fuente
-      ctx.fillStyle = fontColors.clause; // Color
-      ctx.textAlign = 'left'; // Alineación izquierda
-
-      const maxNoticeWidth = width - 250 - noticeX; // Ancho máximo permitido para el texto
-
-      // CÁLCULO DE LÍNEAS NECESARIAS
-      const words = noticeText.split(' '); // Divide texto en palabras
-      let line = ''; // Línea actual
-      let lineCount = 1; // Contador de líneas
-
-      for (let i = 0; i < words.length; i++) {
-        const testLine = line + words[i] + ' '; // Simula agregar palabra
-        const testWidth = ctx.measureText(testLine).width; // Mide ancho
-
-        if (testWidth > maxNoticeWidth && i > 0) {
-          line = words[i] + ' '; // Si se pasa, nueva línea
-          lineCount++;
-        } else {
-          line = testLine; // Si no, agregar a línea actual
-        }
-      }
-
-      const adjustedNoticeY = noticeY - (lineCount - 1) * noticeLineHeight; // Reajusta Y para alinear vertical
-
-      // DIBUJAR TEXTO FINAL
-      this.wrapText(
-        ctx,
-        noticeText,
-        noticeX,
-        adjustedNoticeY,
-        maxNoticeWidth,
-        noticeLineHeight
-      );
-    }
   }
 
   generateBackgroundImage(
@@ -1068,22 +1021,17 @@ export class TicketDrawingService {
     ticketClause: string,
     gracePeriodUnit: string,
     gracePeriodValue: number | null,
-    rotate: boolean = true // NUEVO PARÁMETRO
+    rotate: boolean = true
   ) {
-    const canvas = canvasRef.nativeElement;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!canvasRef) return;
+    const context = canvasRef.nativeElement.getContext('2d');
+    if (!context) return;
+    const ctx = context;
 
-    ctx.save(); // Guardar estado inicial completo
-
-    const width = canvas.width;
-    const height = canvas.height;
+    const width = this.CANVAS_WIDTH;
+    const height = this.CANVAS_HEIGHT;
     const margin = 25;
-    const areaWidth = width - 2 * margin;
-    const areaHeight = height - 2 * margin;
-    const textHorizontalPadding = 40;
 
-    // Si se solicita rotación, aplicamos transformación espejo
     if (rotate) {
       ctx.save();
       ctx.translate(width, 0);
@@ -1092,12 +1040,12 @@ export class TicketDrawingService {
 
     ctx.clearRect(0, 0, width, height);
 
-    // DIBUJAR FONDO
+    // Fondo
     if (background?.startsWith('#')) {
       ctx.fillStyle = background;
       ctx.fillRect(0, 0, width, height);
     } else {
-      const bgImage = this.backgroundImages?.[background];
+      const bgImage = this.backgroundImages[background];
       if (bgImage) {
         if (bgImage.complete) {
           ctx.drawImage(bgImage, 0, 0, width, height);
@@ -1109,12 +1057,13 @@ export class TicketDrawingService {
       }
     }
 
-    ctx.strokeStyle = fontColors.border || '#000';
+    // Borde
+    ctx.strokeStyle = fontColors.border;
     ctx.lineWidth = 4;
-    ctx.strokeRect(margin, margin, areaWidth, areaHeight);
+    ctx.strokeRect(margin, margin, width - 2 * margin, height - 2 * margin);
 
-    ctx.fillStyle = fontColors.clause || '#000';
-
+    const areaHeight = height - 2 * margin;
+    const textHorizontalPadding = 40;
     const maxFontSize = 24;
     const minFontSize = 8;
 
@@ -1167,23 +1116,28 @@ export class TicketDrawingService {
     const textHeight = lines.length * lineHeight;
     let y = margin + (areaHeight - textHeight) / 2 + lineHeight / 2;
 
+    // Título
     if (ticketClause !== '') {
       ctx.font = `bold ${titleFontSize}px Arial`;
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'center';
+      ctx.fillStyle = fontColors.clause;
       ctx.fillText(title, width / 2, y - lineHeight * 0.05);
       y += lineHeight * 2;
     }
 
+    // Texto principal
     ctx.font = `${fontSize}px Arial`;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'center';
+    ctx.fillStyle = fontColors.clause;
 
     for (const line of lines) {
       ctx.fillText(line, width / 2, y);
       y += lineHeight;
     }
 
+    // Caducidad
     if (
       gracePeriodValue != null &&
       gracePeriodValue > 0 &&
@@ -1210,17 +1164,14 @@ export class TicketDrawingService {
       ctx.font = `${noticeFontSize}px Arial`;
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'center';
-
+      ctx.fillStyle = fontColors.clause;
       for (const line of noticeLines) {
         ctx.fillText(line, width / 2, y + 20);
         y += noticeFontSize * 1.2;
       }
     }
 
-    // Restaurar después del espejo (si se usó)
-    if (rotate) ctx.restore();
-
-    ctx.restore(); // Restauramos el estado original del canvas
+    ctx.restore();
   }
 
   preloadBackgroundImages(urls: string[]) {
@@ -1276,23 +1227,23 @@ export class TicketDrawingService {
     height: number,
     color: string
   ) {
-    // 1. Dibujar la imagen en un canvas auxiliar
+    // Dibujar la imagen en un canvas auxiliar
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = width;
     tempCanvas.height = height;
     const tempCtx = tempCanvas.getContext('2d')!;
     tempCtx.drawImage(img, 0, 0, width, height);
 
-    // 2. Extraer los píxeles de la imagen
+    // Extraer los píxeles de la imagen
     const imageData = tempCtx.getImageData(0, 0, width, height);
     const data = imageData.data;
 
-    // 3. Convertir color hex a RGB
+    // Convertir color hex a RGB
     const r = parseInt(color.slice(1, 3), 16);
     const g = parseInt(color.slice(3, 5), 16);
     const b = parseInt(color.slice(5, 7), 16);
 
-    // 4. Reemplazar color manteniendo la transparencia
+    // Reemplazar color manteniendo la transparencia
     for (let i = 0; i < data.length; i += 4) {
       const alpha = data[i + 3];
       if (alpha > 0) {
@@ -1304,7 +1255,7 @@ export class TicketDrawingService {
 
     tempCtx.putImageData(imageData, 0, 0);
 
-    // 5. Dibujar la imagen teñida en el canvas original
+    // Dibujar la imagen teñida en el canvas original
     ctx.drawImage(tempCanvas, x, y, width, height);
   }
 

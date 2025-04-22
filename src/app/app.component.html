@@ -6,22 +6,58 @@
   }
   <span class="logo-text ml-2">Boletoss</span>
   <span class="toolbar-spacer"></span>
-  <!--
+
+  @if (isInRoute('/series/[a-zA-Z0-9-]+') && hasMenuOptions) {
   <button
     mat-icon-button
+    [matMenuTriggerFor]="statusMenu"
     class="example-icon favorite-icon"
-    aria-label="Example icon-button with heart icon"
+    matTooltip="Opciones de la serie"
+    [matTooltipShowDelay]="300"
   >
-    <mat-icon class="text-white">favorite</mat-icon>
+    <mat-icon class="text-white">more_vert</mat-icon>
   </button>
+  }@if (isInRoute('/')) {
   <button
     mat-icon-button
-    class="example-icon"
-    aria-label="Example icon-button with share icon"
+    (click)="changeSeriesListWiew()"
+    [matTooltip]="
+      contextService.viewSeriesArchive
+        ? 'Carrar series archivadas'
+        : 'Ver series archivadas'
+    "
+    [matTooltipShowDelay]="300"
+    class="example-icon favorite-icon"
+    aria-label="Alternar vista de series"
   >
-    <mat-icon class="text-white">share</mat-icon>
+    <mat-icon class="material-symbols-outlined text-white">
+      {{ contextService.viewSeriesArchive ? "folder_open" : "folder" }}
+    </mat-icon>
   </button>
-  -->
+  }
+
+  <mat-menu #statusMenu="matMenu">
+    <button
+      mat-menu-item
+      (click)="changeStatus('Cancelada')"
+      *ngIf="contextService.selectedSeriesCurrentStatus === 'Activa'"
+    >
+      <mat-icon>cancel</mat-icon>
+      <span>Cancelar sorteo</span>
+    </button>
+    <button
+      mat-menu-item
+      (click)="changeStatus('Archivada')"
+      *ngIf="
+        contextService.selectedSeriesCurrentStatus === 'Cancelada' ||
+        contextService.selectedSeriesCurrentStatus === 'Sorteada'
+      "
+    >
+      <mat-icon>archive</mat-icon>
+      <span>Archivar serie</span>
+    </button>
+  </mat-menu>
+
   <button
     *ngIf="authService.isLoggedIn()"
     mat-icon-button

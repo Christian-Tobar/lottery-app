@@ -5,9 +5,10 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { MATERIAL_COMPONENTS } from '../../core/material.components';
 import { MatDialog } from '@angular/material/dialog';
 import { FormControl } from '@angular/forms';
-import { PrintBatch, Ticket } from '../../models/models';
+import { LotterySeriesStatus, PrintBatch, Ticket } from '../../models/models';
 import { PdfticketService } from '../../services/pdfticket.service';
 import { TicketDrawingService } from '../../services/ticket-drawing.service';
+import { ContextService } from '../../services/context.service';
 
 interface NumberedPrintBatch extends PrintBatch {
   batchNumber: number;
@@ -25,18 +26,25 @@ export class SeriesDetailComponent {
   private firestoreService = inject(FirestoreService);
   private pdfticket = inject(PdfticketService);
   private ticketDrawingService = inject(TicketDrawingService);
+  public contextService = inject(ContextService);
+  public dialog = inject(MatDialog);
 
   ticketFrontImage = signal<string | null>(null);
   ticketBackImage = signal<string | null>(null);
-
-  ticketBackAvailable = false;
-
   series = signal<any>(null);
   isLoading = signal(true);
+
+  ticketBackAvailable = false;
   availableTickets: Ticket[] = [];
   selectedTicketCount = new FormControl(1);
   printBatches: NumberedPrintBatch[] = [];
-  dialog = inject(MatDialog);
+
+  stateColors: { [key in LotterySeriesStatus]: string } = {
+    Activa: '#4CAF50', // Verde
+    Sorteada: '#2196F3', // Azul
+    Cancelada: '#F44336', // Rojo
+    Archivada: '#9E9E9E', // Gris
+  };
 
   constructor() {
     this.loadSeries();
@@ -58,6 +66,9 @@ export class SeriesDetailComponent {
     this.series.set(loadedSeries);
     await this.loadTicketImage(loadedSeries);
     await this.loadPrintBatches(seriesId);
+
+    this.contextService.selectedSeriesId = this.series().id;
+    this.contextService.selectedSeriesCurrentStatus = this.series().status;
 
     this.isLoading.set(false);
   }
@@ -206,9 +217,9 @@ export class SeriesDetailComponent {
     this.ticketDrawingService.setupCanvas(backCanvasRef);
 
     const hasBackContent =
-      series.ticketClause?.trim() !== '' &&
-      series.gracePeriodUnit?.trim() !== '' &&
-      series.gracePeriodValue != null;
+      series.ticketClause?.trim() !== '' ||
+      (series.gracePeriodUnit?.trim() !== '' &&
+        series.gracePeriodValue != null);
 
     if (hasBackContent) {
       await this.ticketDrawingService.drawTicketBack(
@@ -240,5 +251,9 @@ export class SeriesDetailComponent {
     if (!series) return;
 
     this.pdfticket.generateTicketsBackPdf(series);
+  }
+
+  getStatusColor(status: string): string {
+    return this.stateColors[status as LotterySeriesStatus] || '#000';
   }
 }

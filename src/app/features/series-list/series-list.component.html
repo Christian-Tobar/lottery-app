@@ -1,4 +1,12 @@
-<div class="pt-4 pl-5 shrink-0"><h3>Series Generadas</h3></div>
+<div class="pt-4 pl-5 shrink-0">
+  <h3>
+    {{
+      contextService.viewSeriesArchive
+        ? "Series Archivadas"
+        : "Series Generadas"
+    }}
+  </h3>
+</div>
 
 <!-- Loader -->
 @if (loading) {
@@ -16,7 +24,7 @@
 }
 
 <!-- Grid de tarjetas scrollable -->
-@if (seriesList.length > 0) {
+@if (!contextService.viewSeriesArchive) { @if (seriesList.length > 0) {
 <div
   class="grid pl-5 pr-5 flex-grow-1 overflow-auto p-0 m-0"
   style="scrollbar-width: none; -ms-overflow-style: none"
@@ -46,13 +54,22 @@
 
       <mat-card-content> </mat-card-content>
       <mat-card-actions>
-        <button
-          mat-button
-          color="primary"
-          (click)="viewSeriesDetails(series.id)"
-        >
-          <mat-icon>visibility</mat-icon> Ver Detalles
-        </button>
+        <div class="card-actions-container">
+          <button
+            mat-button
+            color="primary"
+            (click)="viewSeriesDetails(series.id)"
+          >
+            <mat-icon>visibility</mat-icon> Ver Detalles
+          </button>
+
+          <span
+            class="status-label"
+            [ngStyle]="{ 'background-color': getStatusColor(series.status) }"
+          >
+            {{ series.status }}
+          </span>
+        </div>
       </mat-card-actions>
     </mat-card>
   </div>
@@ -60,4 +77,58 @@
 </div>
 } @if (seriesList.length === 0 && !loading) {
 <p class="text-center">No hay series disponibles.</p>
-}
+} } @if (contextService.viewSeriesArchive) { @if ( archivedSeriesList.length >
+0) {
+<div
+  class="grid pl-5 pr-5 flex-grow-1 overflow-auto p-0 m-0"
+  style="scrollbar-width: none; -ms-overflow-style: none"
+>
+  @for (series of archivedSeriesList; track series.id) {
+  <div class="col-12 md:col-5 lg:col-4 xl:col-3">
+    <mat-card class="series-card">
+      <mat-card-header>
+        <mat-card-title>{{ series.id }}</mat-card-title>
+        <mat-card-subtitle
+          >Boletos impresos: {{ series.printedTickets }} de
+          {{ series.totalTickets }}</mat-card-subtitle
+        >
+      </mat-card-header>
+      <img
+        *ngIf="seriesImages[series.id]; else loadingImg"
+        class="mt-2"
+        mat-card-image
+        [src]="seriesImages[series.id]"
+        alt="Imagen de la serie"
+      />
+      <ng-template #loadingImg>
+        <div style="height: 150px; background: #eee">
+          Cargando vista previa...
+        </div>
+      </ng-template>
+
+      <mat-card-content> </mat-card-content>
+      <mat-card-actions>
+        <div class="card-actions-container">
+          <button
+            mat-button
+            color="primary"
+            (click)="viewSeriesDetails(series.id)"
+          >
+            <mat-icon>visibility</mat-icon> Ver Detalles
+          </button>
+
+          <span
+            class="status-label"
+            [ngStyle]="{ 'background-color': getStatusColor(series.status) }"
+          >
+            {{ series.status }}
+          </span>
+        </div>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+  }
+</div>
+} @if (archivedSeriesList.length === 0 && !loading) {
+<p class="text-center">No hay series archivadas.</p>
+} }

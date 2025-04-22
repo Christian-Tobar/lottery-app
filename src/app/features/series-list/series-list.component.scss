@@ -17,3 +17,20 @@
 .grid::-webkit-scrollbar {
   display: none;
 }
+
+.card-actions-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-right: 10px;
+}
+
+.status-label {
+  color: white;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}

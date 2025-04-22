@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+
 import {
   Firestore,
   collection,
@@ -8,8 +9,14 @@ import {
   getDocs,
   writeBatch,
   updateDoc,
+  query,
+  where,
 } from '@angular/fire/firestore';
-import { LotterySeries, PrintBatch } from '../models/models';
+import {
+  LotterySeries,
+  LotterySeriesStatus,
+  PrintBatch,
+} from '../models/models';
 
 // INTERFACES INTERNAS
 interface Ticket {
@@ -41,6 +48,7 @@ export class FirestoreService {
 
     // Registro principal de la serie
     const seriesDoc = await addDoc(seriesRef, {
+      status: series.status,
       ticketTitle: series.ticketTitle,
       ticketDescription: series.ticketDescription,
       date: series.date,
@@ -105,6 +113,7 @@ export class FirestoreService {
 
     return {
       id,
+      status: data['status'] || '',
       date: data['date'] || '',
       ticketTitle: data['ticketTitle'] || '',
       ticketDescription: data['ticketDescription'] || '',
@@ -128,6 +137,80 @@ export class FirestoreService {
     };
   }
 
+  async getNonArchivedSeries(): Promise<LotterySeries[]> {
+    const seriesCollection = collection(this.firestore, 'series');
+
+    // Consulta Firestore excluyendo las series con estado 'Archivada'
+    const q = query(seriesCollection, where('status', '!=', 'Archivada'));
+    const seriesSnapshot = await getDocs(q);
+
+    return seriesSnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        status: data['status'] || '',
+        date: data['date'] || '',
+        ticketTitle: data['ticketTitle'] || '',
+        ticketDescription: data['ticketDescription'] || '',
+        contact: data['contact'] || '',
+        opportunities: data['opportunities'] || 0,
+        figures: data['figures'] || 0,
+        tickets: [],
+        selectedColor: data['selectedColor'] || '',
+        fontColors: data['fontColors'] || null,
+        ticketBackground: data['ticketBackground'] || '',
+        ticketBackBackground: data['ticketBackBackground'] || '',
+        totalTickets: data['totalTickets'] ?? 0,
+        printedTickets: data['printedTickets'] ?? 0,
+        availableTickets: data['availableTickets'] ?? data['totalTickets'] ?? 0,
+        ticketClause: data['ticketClause'] || '',
+        gracePeriodValue: data['gracePeriodValue'] ?? null,
+        gracePeriodUnit: data['gracePeriodUnit'] ?? null,
+        ticketLogo: data['ticketLogo'] || false,
+        startRectAreaY: data['startRectAreaY'] ?? 0,
+        endRectAreaY: data['endRectAreaY'] ?? 0,
+        createdAt: data['createdAt'] || null,
+      };
+    });
+  }
+
+  async getArchivedSeries(): Promise<LotterySeries[]> {
+    const seriesCollection = collection(this.firestore, 'series');
+
+    // Consulta Firestore incluyendo solo las series con estado 'Archivada'
+    const q = query(seriesCollection, where('status', '==', 'Archivada'));
+    const seriesSnapshot = await getDocs(q);
+
+    return seriesSnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        status: data['status'] || '',
+        date: data['date'] || '',
+        ticketTitle: data['ticketTitle'] || '',
+        ticketDescription: data['ticketDescription'] || '',
+        contact: data['contact'] || '',
+        opportunities: data['opportunities'] || 0,
+        figures: data['figures'] || 0,
+        tickets: [],
+        selectedColor: data['selectedColor'] || '',
+        fontColors: data['fontColors'] || null,
+        ticketBackground: data['ticketBackground'] || '',
+        ticketBackBackground: data['ticketBackBackground'] || '',
+        totalTickets: data['totalTickets'] ?? 0,
+        printedTickets: data['printedTickets'] ?? 0,
+        availableTickets: data['availableTickets'] ?? data['totalTickets'] ?? 0,
+        ticketClause: data['ticketClause'] || '',
+        gracePeriodValue: data['gracePeriodValue'] ?? null,
+        gracePeriodUnit: data['gracePeriodUnit'] ?? null,
+        ticketLogo: data['ticketLogo'] || false,
+        startRectAreaY: data['startRectAreaY'] ?? 0,
+        endRectAreaY: data['endRectAreaY'] ?? 0,
+        createdAt: data['createdAt'] || null,
+      };
+    });
+  }
+
   // OBTIENE TODAS LAS SERIES DISPONIBLES EN FIRESTORE
   async getAllSeries(): Promise<LotterySeries[]> {
     const seriesCollection = collection(this.firestore, 'series');
@@ -137,6 +220,7 @@ export class FirestoreService {
       const data = doc.data();
       return {
         id: doc.id,
+        status: data['status'] || '',
         date: data['date'] || '',
         ticketTitle: data['ticketTitle'] || '',
         ticketDescription: data['ticketDescription'] || '',
@@ -239,6 +323,21 @@ export class FirestoreService {
     });
 
     return tickets;
+  }
+
+  // ACTUALIZA EL ESTADO DE UNA SERIE POR SU ID
+  async updateSeriesStatus(
+    seriesId: string,
+    newStatus: LotterySeriesStatus
+  ): Promise<void> {
+    if (!seriesId || !newStatus) {
+      throw new Error('ID de la serie o nuevo estado inválido.');
+    }
+
+    const seriesRef = doc(this.firestore, `series/${seriesId}`);
+    await updateDoc(seriesRef, {
+      status: newStatus,
+    });
   }
 
   // OBTIENE TODAS LAS TANDAS DE IMPRESIÓN DE UNA SERIE

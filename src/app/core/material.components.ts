@@ -17,6 +17,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 export const MATERIAL_COMPONENTS = [
   MatButtonModule,
@@ -38,4 +39,5 @@ export const MATERIAL_COMPONENTS = [
   MatProgressSpinnerModule,
   MatBottomSheetModule,
   MatMenuModule,
+  MatTooltipModule,
 ];

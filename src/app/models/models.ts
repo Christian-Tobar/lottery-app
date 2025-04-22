@@ -29,6 +29,7 @@ export interface PrintBatch {
 
 export interface LotterySeries {
   id?: string;
+  status: LotterySeriesStatus;
   date: string;
   ticketTitle: string;
   ticketDescription: string;
@@ -50,6 +51,12 @@ export interface LotterySeries {
   endRectAreaY: number;
   createdAt?: string;
 }
+
+export type LotterySeriesStatus =
+  | 'Activa'
+  | 'Sorteada'
+  | 'Cancelada'
+  | 'Archivada';
 
 export interface FontColors {
   title: string;
